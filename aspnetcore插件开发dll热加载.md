@@ -1,0 +1,193 @@
+# aspnetcore插件开发dll热加载
+
+**发布日期:** 2024-04-26  
+**原文链接:** https://www.cnblogs.com/morec/p/18161023  
+**标签:** 无
+
+---
+
+该项目比较简单，只是单纯的把业务的dll模块和controller的dll做了一个动态的添加删除处理，目的就是插件开发。由于该项目过于简单，请勿吐槽。复杂的后续可以通过泛型的实体、dto等做业务和接口的动态区分。
+
+项目结构如下：
+
+![](./images/aspnetcore插件开发dll热加载/image_1.png)
+
+上面的两个模块是独立通过dll加载道项目中的
+
+![](./images/aspnetcore插件开发dll热加载/image_2.png)
+
+repository动态的核心思想在此项目中是反射
+
+public interface IRepositoryProvider
+{
+ IRepository GetRepository(string serviceeName);
+}
+public class RepositoryProvider : IRepositoryProvider
+{
+ public IRepository GetRepository(string x)
+ {
+ var path = $"{Directory.GetCurrentDirectory()}\\lib\\{x}.Repository.dll";
+ var _AssemblyLoadContext = new AssemblyLoadContext(Guid.NewGuid().ToString("N"), true);
+ Assembly assembly = null;
+ using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+ {
+ assembly = _AssemblyLoadContext.LoadFromStream(fs);
+ }
+ 
+ //var assembly = Assembly.LoadFrom(path);
+ var types = assembly.GetTypes()
+ .Where(t => typeof(IRepository).IsAssignableFrom(t) && !t.IsInterface);
+ return (IRepository)Activator.CreateInstance(types.First());
+ }
+}
+
+通过一个provider注入来获取示例，这个repository的示例既然是动态热拔插，能想到暂时只能是反射来做这一块了。
+
+using Autofac;
+using IOrder.Repository;
+using Order.Repository;
+
+namespace AutofacRegister
+{
+ public class RepositoryModule:Module
+ {
+ protected override void Load(ContainerBuilder builder)
+ {
+ //builder.RegisterType<Repository>().As<IRepository>().SingleInstance();
+ builder.RegisterType<RepositoryProvider>().As<IRepositoryProvider>().InstancePerLifetimeScope();
+ }
+ }
+}
+
+controller插件这一块大同小异，这个控制器是通过程序集注入来实现的
+
+ public class MyControllerFilter : IStartupFilter
+ {
+ 
+ private readonly PluginManager pluginManager;
+ List<string> controllers = new List<string> { "First","Second" };
+ public MyControllerFilter(PluginManager pluginManager)
+ {
+ this.pluginManager = pluginManager;
+ controllers.ForEach(x => pluginManager.LoadPlugins($"{Directory.GetCurrentDirectory()}\\lib\\", $"{x}.Impl.dll"));
+ }
+ Action<IApplicationBuilder> IStartupFilter.Configure(Action<IApplicationBuilder> next)
+ {
+ BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
+ return app =>
+ {
+
+ app.UseRouting();
+ app.UseEndpoints(endpoints =>
+ {
+ foreach (IPlugin item in pluginManager.GetPlugins())
+ {
+ foreach (MethodInfo mi in item.GetType().GetMethods(bindingFlags))
+ {
+ endpoints.MapPost($"/{item.GetType().Name.Replace("Service", "")}/{mi.Name}", async (string parameters, HttpContext cotext) =>
+ {
+
+ var task = (Task)mi.Invoke(item, new object[] { parameters });
+ if (task is Task apiTask)
+ {
+ await apiTask;
+
+ // 如果任务有返回结果
+ if (apiTask is Task<object> resultTask)
+ {
+ var res = await resultTask;
+ return Results.Ok(JsonConvert.SerializeObject(res));
+ }
+ }
+
+ // 如果方法没有返回 Task<ApiResult>，返回 NotFound
+ return Results.NotFound("Method execution did not return a result.");
+ });
+ }
+ }
+ });
+ next(app);
+ };
+ }
+ }
+
+但是有一个问题,它的变化势必需要重新渲染整个controller,我只能重启他的服务了。
+
+using Microsoft.Extensions.Hosting;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace StartupDiagnostics
+{
+ public class FileWatcherService : IHostedService
+ {
+ private readonly string _watchedFolder;
+ private FileSystemWatcher _fileSystemWatcher;
+ private readonly IHostApplicationLifetime _appLifetime;
+ public FileWatcherService(IHostApplicationLifetime appLifetime)
+ {
+ _watchedFolder =Path.Combine(Directory.GetCurrentDirectory(),"lib"); //细化指定类型的dll
+ _appLifetime = appLifetime;
+ }
+
+ public Task StartAsync(CancellationToken cancellationToken)
+ {
+ _fileSystemWatcher = new FileSystemWatcher(_watchedFolder);
+ _fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+ _fileSystemWatcher.Changed += OnFileChanged;
+ _fileSystemWatcher.Created += OnFileChanged;
+ _fileSystemWatcher.Deleted += OnFileChanged;
+ _fileSystemWatcher.Renamed += OnFileChanged;
+ _fileSystemWatcher.EnableRaisingEvents = true;
+
+ return Task.CompletedTask;
+ }
+
+ public Task StopAsync(CancellationToken cancellationToken)
+ {
+ _fileSystemWatcher.Dispose();
+ return Task.CompletedTask;
+ }
+
+ private void OnFileChanged(object sender, FileSystemEventArgs e)
+ {
+ // 文件夹内容发生变化时重新启动应用程序
+ var processStartInfo = new ProcessStartInfo
+ {
+ FileName = "dotnet",
+ Arguments = $"exec \"{System.Reflection.Assembly.GetEntryAssembly().Location}\"",
+ UseShellExecute = false
+ };
+
+ _appLifetime.ApplicationStopped.Register(() =>
+ {
+ Process.Start(processStartInfo);
+ });
+ _appLifetime.StopApplication();
+
+ }
+ }
+}
+
+repository这一块页面效果没法展示，
+
+controllerr可以通过swagger来看看，first和second这可以通过删除dll和添加dll来增加和删除controller给第三方。
+
+![](./images/aspnetcore插件开发dll热加载/image_3.png)
+
+![](./images/aspnetcore插件开发dll热加载/image_4.png)
+
+这是控制台展示的重启效果
+
+![](./images/aspnetcore插件开发dll热加载/image_5.png)
+
+源代码如下：
+
+[liuzhixin405/AspNetCoreSimpleAop (github.com)](https://github.com/liuzhixin405/AspNetCoreSimpleAop/tree/main)
+
+---
+
+*本文档由博客园下载器自动生成*
