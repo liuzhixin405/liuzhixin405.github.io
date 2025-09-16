@@ -20,7 +20,7 @@ SSE （服务器发送事件）是一种基于 HTTP/1.1 协议的传达模型，
 
 项目结构如下：
 
-!(./images/ASP.NET Core EventStream (SSE) 使用以及 WebSocket 比较/image_1.png)
+!![Alt text](/images/ASP.NET Core EventStream (SSE) 使用以及 WebSocket 比较/image_1.png)
 
  Starup.cs文件新增如下代码：
 
