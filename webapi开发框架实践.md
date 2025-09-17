@@ -16,6 +16,7 @@
 
 **1、支持的orm有efcore6、dapper,可以灵活切换数据库。**
 
+```csharp
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Elfie.Model;
 using Microsoft.EntityFrameworkCore;
@@ -31,20 +32,29 @@ namespace project.Extensions
  public static void AddDatabase(this WebApplicationBuilder builder)
  {
  ///sqlserver 
+```
+
  if (builder.Configuration["DbType"]?.ToLower() == "sqlserver")
+```css
  {
  builder.Services.AddDbContext<ReadProductDbContext>(options => options.UseSqlServer(builder.Configuration["ConnectionStrings:SqlServer:ReadConnection"]), ServiceLifetime.Scoped);
  builder.Services.AddDbContext<WriteProductDbContext>(options => options.UseSqlServer(builder.Configuration["ConnectionStrings:SqlServer:WriteConnection"]), ServiceLifetime.Scoped);
 
  }
  ///mysql
+```
+
  else if (builder.Configuration["DbType"]?.ToLower() == "mysql")
+```css
  {
  builder.Services.AddDbContext<ReadProductDbContext>(options => options.UseMySQL(builder.Configuration["ConnectionStrings:MySql:ReadConnection"]), ServiceLifetime.Scoped);
  builder.Services.AddDbContext<WriteProductDbContext>(options => options.UseMySQL(builder.Configuration["ConnectionStrings:MySql:WriteConnection"]), ServiceLifetime.Scoped);
 
  }
+```
+
  else
+```css
  {
  //throw new ArgumentNullException("δ����ȷ��ע�����ݿ�");
  builder.Services.AddDbContext<ReadProductDbContext>(options => options.UseInMemoryDatabase("test_inmemory_db"), ServiceLifetime.Scoped);
@@ -67,8 +77,11 @@ namespace project.Extensions
  }
 }
 
+```
+
 **2、至于消息中间件有rabbitmq、kafka，也是通过配置文件来指定哪一个实现。**
 
+```csharp
 using MessageMiddleware.Factory;
 using MessageMiddleware.RabbitMQ;
 
@@ -81,25 +94,34 @@ namespace project.Extensions
  var rabbitMqSetting = new RabbitMQSetting
  {
  ConnectionString = builder.Configuration["MqSetting:RabbitMq:ConnectionString"].Split(';'),
+```
+
  Password = builder.Configuration["MqSetting:RabbitMq:PassWord"],
  Port = int.Parse(builder.Configuration["MqSetting:RabbitMq:Port"]),
  SslEnabled = bool.Parse(builder.Configuration["MqSetting:RabbitMq:SslEnabled"]),
  UserName = builder.Configuration["MqSetting:RabbitMq:UserName"],
+```css
  };
  var kafkaSetting = new MessageMiddleware.Kafka.Producers.ProducerOptions
  {
+```
+
  BootstrapServers = builder.Configuration["MqSetting:Kafka:BootstrapServers"],
  SaslUsername = builder.Configuration["MqSetting:Kafka:SaslUserName"],
  SaslPassword = builder.Configuration["MqSetting:Kafka:SaslPassWord"],
  Key = builder.Configuration["MqSetting:Kafka:Key"]
+```css
  };
  var mqConfig = new MQConfig
  {
+```
+
  ConsumerLog = bool.Parse(builder.Configuration["MqSetting:ConsumerLog"]),
  PublishLog = bool.Parse(builder.Configuration["MqSetting:PublishLog"]),
  Rabbit = rabbitMqSetting,
  Use = int.Parse(builder.Configuration["MqSetting:Use"]),
  Kafka = kafkaSetting
+```css
  };
  builder.Services.AddSingleton<MQConfig>(sp => mqConfig);
  builder.Services.AddMQ(mqConfig);
@@ -107,29 +129,44 @@ namespace project.Extensions
  }
 }
 
+```
+
 **3、该项目还集成了mongodb和elasticsearch,在project项目中没有写实现案例，实现起来也很简单。**
 
 **4、下面是分布式雪花id的实现，先注入代码，使用的时候直接使用distributedid即可。**
 
  builder.Services.AddDistributedLock(x =>
+```css
  {
  x.LockType = LockType.InMemory;
  x.RedisEndPoints = new string[] { builder.Configuration["DistributedRedis:ConnectionString"] ?? throw new Exception("$未能获取distributedredis连接字符串")};
  }).AddCache(new CacheOptions
  {
+```
+
  CacheType = CacheTypes.Redis,
  RedisConnectionString = builder.Configuration["DistributedRedis:ConnectionString"] ?? throw new Exception("$未能获取distributedredis连接字符串")
+```css
  }).AddDistributedId(new DistributedIdOptions
  {
+```
+
  Distributed = true
+```css
  });
 
+```
+
 ```csharp
+```
  newProduct.Id = _distributedId.NewLongId().ToString();
+```
+
 ```
 
 **5、缓存使用的是分布式缓存和内存缓存，其中分布式缓存有一般实现和指定序列化格式的实现。**
 
+```csharp
 using System.Text;
 using System.Text.Json.Serialization;
 using MessagePack;
@@ -245,6 +282,8 @@ namespace project.Utility.Helper
  }
  }
 }
+
+```
 
 **6、单元测试、集成测试没有写。**
 

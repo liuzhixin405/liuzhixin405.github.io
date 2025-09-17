@@ -28,6 +28,7 @@ Server里面包含简单jwt的token的生成，client和002需要调用登录，
 
 服务之间调用如果不用proto的话，那么接口必须是公共部分，值得注意的是接口的参数和返回值必须 包含[MessagePackObject(true)]的特性，硬性条件。返回值必须被UnaryResult包裹，接口继承MagicOnion的IService,有兴趣深入的自己研究源码。
 
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,7 +46,10 @@ namespace MicroService.Shared
  UnaryResult<string> DangerousOperationAsync();
  }
 
+```
+
  [MessagePackObject(true)]
+```csharp
  public class SignInResponse
  {
  public long UserId { get; set; }
@@ -68,7 +72,10 @@ namespace MicroService.Shared
  }
  }
 
+```
+
  [MessagePackObject(true)]
+```csharp
  public class CurrentUserResponse
  {
  public static CurrentUserResponse Anonymous { get; } = new CurrentUserResponse() { IsAuthenticated = false, Name = "Anonymous" };
@@ -79,12 +86,15 @@ namespace MicroService.Shared
  }
 }
 
+```
+
 # ![](./images/aspnetcore微服务之间grpc通信,无proto文件/image_5.png)
 
 上面GrpcClientPool和IGrpcClientFactory是我封装的客户端请求的一个链接池，跟MagicOnion没有任何关系。客户端如果使用原生的Grpc.Net.Client库作为客户端请求完全可以,通过 MagicOnionClient.Create<IAccountService>(channel)把grpcchannel塞入拿到接口服务即可。
 
 **服务端代码**如下：
 
+```csharp
 using JwtAuthApp.Server.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -99,9 +109,15 @@ namespace JwtAuthApp.Server
  var builder = WebApplication.CreateBuilder(args);
 
  // Add services to the container.
+```
+
  builder.WebHost.ConfigureKestrel(options =>
+```css
  {
+```
+
  options.ConfigureEndpointDefaults(endpointOptions =>
+```css
  {
  endpointOptions.Protocols = HttpProtocols.Http2;
  });
@@ -111,11 +127,19 @@ namespace JwtAuthApp.Server
 
  builder.Services.AddSingleton<JwtTokenService>();
  builder.Services.Configure<JwtTokenServiceOptions>(builder.Configuration.GetSection("JwtAuthApp.Server:JwtTokenService"));
+```
+
  builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
  .AddJwtBearer(options =>
+```css
  {
+```
+
  options.TokenValidationParameters = new TokenValidationParameters
+```css
  {
+```
+
  IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(builder.Configuration.GetSection("JwtAuthApp.Server:JwtTokenService:Secret").Value!)),
  RequireExpirationTime = true,
  RequireSignedTokens = true,
@@ -125,10 +149,17 @@ namespace JwtAuthApp.Server
  ValidateAudience = false,
  ValidateLifetime = true,
  ValidateIssuerSigningKey = true,
+```css
  };
+```
+
 #if DEBUG
+```
  options.RequireHttpsMetadata = false;
+```
+
 #endif
+```css
  });
  builder.Services.AddAuthorization();
 
@@ -140,7 +171,10 @@ namespace JwtAuthApp.Server
  var app = builder.Build();
 
  // Configure the HTTP request pipeline.
+```
+
  if (app.Environment.IsDevelopment())
+```css
  {
  app.UseSwagger();
  app.UseSwaggerUI();
@@ -159,13 +193,19 @@ namespace JwtAuthApp.Server
  }
 }
 
+```
+
 ```csharp
 实际上跟组件有关的代码只有这么多了，剩下的就是jwt的。
 
 ```
  builder.WebHost.ConfigureKestrel(options =>
+```css
  {
+```
+
  options.ConfigureEndpointDefaults(endpointOptions =>
+```css
  {
  endpointOptions.Protocols = HttpProtocols.Http2;
  });
@@ -174,8 +214,11 @@ namespace JwtAuthApp.Server
  builder.Services.AddMagicOnion();
  app.MapMagicOnionService();
 
+```
+
 当然作为服务的提供者实现IAccountService的接口是必须的。
 
+```csharp
 using Grpc.Core;
 using JwtAuthApp.Server.Authentication;
 using System.Security.Claims;
@@ -186,7 +229,10 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace JwtAuthApp.Server.GrpcService
 {
+```
+
  [Authorize]
+```csharp
  public class AccountService : ServiceBase<IAccountService>, IAccountService
  {
  private static IDictionary<string, (string Password, long UserId, string DisplayName)> DummyUsers = new Dictionary<string, (string, long, string)>(StringComparer.OrdinalIgnoreCase)
@@ -202,7 +248,10 @@ namespace JwtAuthApp.Server.GrpcService
  _jwtTokenService = jwtTokenService ?? throw new ArgumentNullException(nameof(jwtTokenService));
  }
 
+```
+
  [AllowAnonymous]
+```csharp
  public async UnaryResult<SignInResponse> SignInAsync(string signInId, string password)
  {
  await Task.Delay(1); // some workloads...
@@ -211,24 +260,33 @@ namespace JwtAuthApp.Server.GrpcService
  {
  var (token, expires) = _jwtTokenService.CreateToken(userInfo.UserId, userInfo.DisplayName);
 
+```
+
  return new SignInResponse(
  userInfo.UserId,
  userInfo.DisplayName,
  token,
  expires
+```
  );
  }
 
  return SignInResponse.Failed;
  }
 
+```
+
  [AllowAnonymous]
+```csharp
  public async UnaryResult<CurrentUserResponse> GetCurrentUserNameAsync()
  {
  await Task.Delay(1); // some workloads...
 
  var userPrincipal = Context.CallContext.GetHttpContext().User;
+```
+
  if (userPrincipal.Identity?.IsAuthenticated ?? false)
+```css
  {
  if (!int.TryParse(userPrincipal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value, out var userId))
  {
@@ -236,18 +294,27 @@ namespace JwtAuthApp.Server.GrpcService
  }
 
  var user = DummyUsers.SingleOrDefault(x => x.Value.UserId == userId).Value;
+```
+
  return new CurrentUserResponse()
+```css
  {
+```
+
  IsAuthenticated = true,
  UserId = user.UserId,
  Name = user.DisplayName,
+```css
  };
  }
 
  return CurrentUserResponse.Anonymous;
  }
 
+```
+
  [Authorize(Roles = "Administrators")]
+```csharp
  public async UnaryResult<string> DangerousOperationAsync()
  {
  await Task.Delay(1); // some workloads...
@@ -257,8 +324,11 @@ namespace JwtAuthApp.Server.GrpcService
  }
 }
 
+```
+
 当然jwt服务的代码也必不可少，还有密钥串json文件。
 
+```csharp
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -281,13 +351,22 @@ namespace JwtAuthApp.Server.Authentication
  var expires = DateTime.UtcNow.AddSeconds(10);
  var token = jwtTokenHandler.CreateEncodedJwt(new SecurityTokenDescriptor()
  {
+```
+
  SigningCredentials = new SigningCredentials(_securityKey, SecurityAlgorithms.HmacSha256),
  Subject = new ClaimsIdentity(new[]
+```css
  {
+```
+
  new Claim(ClaimTypes.Name, displayName),
  new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+```css
  }),
+```
+
  Expires = expires,
+```css
  });
 
  return (token, expires);
@@ -304,22 +383,31 @@ namespace JwtAuthApp.Server.Authentication
  "JwtAuthApp.Server": {
  "JwtTokenService": {
  /* 64 bytes (512 bits) secret key */
+```
+
  "Secret": "/Z8OkdguxFFbaxOIG1q+V9HeujzMKg1n9gcAYB+x4QvhF87XcD8sQA4VsdwqKVuCmVrXWxReh/6dmVXrjQoo9Q=="
+```css
  }
  },
  "Logging": {
  "LogLevel": {
+```
+
  "Default": "Trace",
  "System": "Information",
  "Microsoft": "Information"
+```css
  }
  }
 }
+
+```
 
 上面的代码完全可以运行一个jwt服务了。
 
 下面就是**客户端代码**，因为两个客户端是一样的只是做测试，所以列出一个就够了。
 
+```csharp
 using Login.Client.GrpcClient;
 using MicroService.Shared.GrpcPool;
 using MicroService.Shared;
@@ -344,7 +432,10 @@ namespace Login.Client
  var app = builder.Build();
 
  // Configure the HTTP request pipeline.
+```
+
  if (app.Environment.IsDevelopment())
+```css
  {
  app.UseSwagger();
  app.UseSwaggerUI();
@@ -361,30 +452,45 @@ namespace Login.Client
  }
 }
 
+```
+
 客户端Program.cs只是注入了连接池，没有其他任何多余代码，配置文件当然必不可少。
 
+```
  builder.Services.AddTransient<IGrpcClientFactory<IAccountService>, LoginClientFactory>();
  builder.Services.AddTransient(sp => new GrpcClientPool<IAccountService>(sp.GetService<IGrpcClientFactory<IAccountService>>(), builder.Configuration, builder.Configuration["Grpc:Service:JwtAuthApp.ServiceAddress"]));
 
 {
  "Logging": {
  "LogLevel": {
+```
+
  "Default": "Information",
  "Microsoft.AspNetCore": "Warning"
+```css
  }
  },
+```
+
  "AllowedHosts": "*",
+```css
  "Grpc": {
  "Service": {
  "JwtAuthApp.ServiceAddress": "https://localhost:7021"
  }, 
+```
+
  "maxConnections": 10,
+```
  "handoverTimeout":10 // seconds
  }
 }
 
+```
+
 登录的对外接口如下：
 
+```csharp
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Channels;
 using Grpc.Net.Client;
@@ -396,8 +502,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Login.Client.Controllers
 {
+```
+
  [ApiController]
  [Route("[controller]")]
+```csharp
  public class LoginController : ControllerBase
  {
 
@@ -414,7 +523,10 @@ namespace Login.Client.Controllers
  _grpcClientPool = grpcClientPool;
  }
 
+```
+
  [HttpGet(Name = "Login")]
+```csharp
  public async Task<ActionResult<Tuple<bool,string?>>> Login([Required]string signInId, [Required]string pwd)
  {
  SignInResponse authResult;
@@ -425,12 +537,18 @@ namespace Login.Client.Controllers
  }*/
 
  var client = _grpcClientPool.GetClient();
+```
+
  try
+```css
  {
  // 使用client进行gRPC调用
  authResult = await client.SignInAsync(signInId, pwd);
  }
+```
+
  finally
+```css
  {
  _grpcClientPool.ReleaseClient(client);
  }
@@ -439,8 +557,11 @@ namespace Login.Client.Controllers
  }
 }
 
+```
+
 客户端就剩下一个返回服务的接口工厂了
 
+```csharp
 using Grpc.Net.Client;
 using MagicOnion.Client;
 using MicroService.Shared;
@@ -457,8 +578,11 @@ namespace Login.Client.GrpcClient
  }
 }
 
+```
+
 最后就是连接池的实现：
 
+```csharp
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -484,7 +608,10 @@ namespace MicroService.Shared.GrpcPool
  private readonly string _address;
  private readonly DateTime _now;
  public GrpcClientPool(IGrpcClientFactory<TClient> clientFactory,
+```
+
  IConfiguration configuration,string address)
+```css
  {
  _now = DateTime.Now;
  _clientFactory = clientFactory;
@@ -500,7 +627,10 @@ namespace MicroService.Shared.GrpcPool
  return client;
  }
 
+```
+
  if (_clientPool.Count < _maxConnections)
+```css
  {
  var channel = GrpcChannel.ForAddress(_address);
  client = _clientFactory.Create(channel);
@@ -508,7 +638,10 @@ namespace MicroService.Shared.GrpcPool
  return client;
  }
 
+```
+
  if (!_clientPool.TryTake(out client) && DateTime.Now.Subtract(_now) > _handoverTimeout)
+```css
  {
  throw new TimeoutException("Failed to acquire a connection from the pool within the specified timeout.");
  }
@@ -517,7 +650,10 @@ namespace MicroService.Shared.GrpcPool
 
  public void ReleaseClient(TClient client)
  {
+```
+
  if (client == null)
+```css
  {
  return;
  }
@@ -526,18 +662,23 @@ namespace MicroService.Shared.GrpcPool
  }
 }
 
+```
+
 上面已经演示过了接口调用的接口，这里不再展示，代码示例如下：
 
 [liuzhixin405/efcore-template (github.com)](https://github.com/liuzhixin405/efcore-template)
 
 不想做池化客户端注入的代码全部不需要了，只需要下面代码就可以了，代码会更少更精简。
 
+```
  SignInResponse authResult;
  using (var channel = GrpcChannel.ForAddress(_configuration["JwtAuthApp.ServiceAddress"])) 
  {
  var accountClient = MagicOnionClient.Create<IAccountService>(channel);
  authResult = await accountClient.SignInAsync(user, pwd);
  }
+
+```
 
 ---
 

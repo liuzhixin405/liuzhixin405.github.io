@@ -8,6 +8,7 @@
 
 后端代码如下:
 
+```csharp
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -18,12 +19,18 @@ using System.Threading.Tasks;
 
 namespace WebApplication.Controllers
 {
+```
+
  [Route("api/[controller]")]
  [ApiController]
+```csharp
  public class ValuesController : ControllerBase
  {
  // GET: api/<ValuesController>
+```
+
  [HttpGet]
+```csharp
  public IEnumerable<string> Get()
  {
  return new string[] { "value1", "value2" };
@@ -37,7 +44,10 @@ namespace WebApplication.Controllers
  }
 
  // POST api/<ValuesController>
+```
+
  [HttpPost]
+```csharp
  public void Post([FromForm] string value) <span style="color: rgba(255, 0, 0, 1)">//FromBody须改成FromFrom要不然跨域还是会报错
  {
  }
@@ -83,10 +93,16 @@ namespace WebApplication
  // This method gets called by the runtime. Use this method to add services to the container.
  public void ConfigureServices(IServiceCollection services)
  {
+```
+
  services.AddCors(options =>
+```css
  {
  <span style="color: rgba(255, 0, 0, 1)"> options.AddPolicy(name: MyAllowSpecificOrigins,
+```
+
  builder </span>=>
+```css
  {
  builder.WithMethods("get", "post").AllowAnyOrigin();//允许任何来源的主机访问
 <span style="color: rgba(255, 0, 0, 1)"> 
@@ -99,11 +115,17 @@ namespace WebApplication
  </span>// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
  public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
  {
+```
+
  if (env.IsDevelopment())
+```css
  {
  app.UseDeveloperExceptionPage();
  }
+```
+
  else
+```css
  {
  app.UseExceptionHandler("/Home/Error");
  // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
@@ -116,18 +138,27 @@ namespace WebApplication
 
  app.UseAuthorization();
  <span style="color: rgba(255, 0, 0, 1)"> app.UseCors(MyAllowSpecificOrigins);
+```
+
  app.UseEndpoints(endpoints </span>=>
+```css
  {
+```
+
  endpoints.MapControllerRoute(
  name: "default",
+```css
  pattern: "{controller=Home}/{action=Index}/{id?}");
  });
  }
  }
 }
 
+```
+
 前端就是一个测试demo，代码如下：
 
+```html
 <HTML>
 <HEAD></HEAD>
 <script charset="utf-8">
@@ -172,10 +203,15 @@ return xhr;
 <BODY>
 
 <div id="i">
+```
+
 test
+```xml
 </div>
 </BODY>
 </HTML>
+
+```
 
 ---
 

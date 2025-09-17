@@ -12,6 +12,7 @@
 
 第一层如下,三个对象A、B、C分别有一个接收消息的方法，还有一个存储数据的字段，X就是发布消息的对象，它通过setdata方法设置自己的字段data,然后通知abc，abc如愿以偿地拿到了通知，完美!
 
+```python
 internal class A
  {
  public int Data;
@@ -75,9 +76,12 @@ Console.WriteLine($"a.Data = {a.Data}");
 Console.WriteLine($"b.Count = {b.Count}");
 Console.WriteLine($"c.N = {c.N}");
 
+```
+
 再想一想，这好像不够灵活，订阅者是死的，那改进一下：
 
 internal interface IUpdatebleObject
+```css
  {
  int Data { get; }
  void Update(int newData);
@@ -153,13 +157,19 @@ Console.WriteLine($"a.Data = {a.Data}");
 Console.WriteLine($"b.Data = {b.Data}");
 Console.WriteLine($"c.Data = {c.Data}");
 
+```
+
 虽然写到这个例子已经很了不起了，但是对于有想法的来说还是可以继续改进，要不然怎么常挂嘴边说面对抽象编程呢，那就继续改进了：
 
+```
 /// <summary>
  /// 观察者
  /// </summary>
  /// <typeparam name="T"></typeparam>
+```
+
  internal interface IObserver<T>
+```css
  {
  void Update(SubjectBase<T> subject);
  }
@@ -214,8 +224,11 @@ Console.WriteLine($"c.Data = {c.Data}");
  {
  }
 
+```
+
 到这里基本上可以说是把骨架搭起来了，这些可以称之为底层的代码。实现代码如下：
 
+```python
 internal class TestObserver
  {
  public void TestMulticst()
@@ -263,8 +276,11 @@ using ObserverThree;
 
 new TestObserver().TestMultiSubject();
 
+```
+
 到这里基本上就完成了任务，也就可以结束了。但是，学习需要深度也需要宽度，所以观察者模式在C#可以通过事件来实现一样的效果。下面就看下上面写这么多的代码用事件怎么写呢,这里的实例稍作变化,实现改变名字通知观察者，这里观察者就是控制台了，打印通知：
 
+```python
  internal class UserEventArgs:EventArgs
  {
  private string name;
@@ -284,7 +300,10 @@ new TestObserver().TestMultiSubject();
  public string Name
  {
  get { return name; }
+```
+
  set
+```css
  {
  name = value;
  NameChanged?.Invoke(this, new UserEventArgs(value));
@@ -298,13 +317,19 @@ User user = new User();
 user.NameChanged += OnNameChanged;
 user.Name = "joe";
 
+```
+
 void OnNameChanged(object sender, UserEventArgs args)
+```css
 {
  Console.WriteLine($"{args.Name} Changed ");
 }
 
+```
+
 再放一个麻烦一点的例子，字典新增的通知(监听)事件：
 
+```python
  internal class DictionaryEventArgs<TKey,TValue> : EventArgs
  {
  private TKey key;
@@ -319,7 +344,10 @@ void OnNameChanged(object sender, UserEventArgs args)
  public TValue Value => value;
  }
 
+```
+
  internal interface IObserverableDictionary<TKey,TValue>:IDictionary<TKey, TValue>
+```css
  {
  EventHandler<DictionaryEventArgs<TKey,TValue>> NewItemAdded { get; set; }
  }
@@ -331,7 +359,10 @@ void OnNameChanged(object sender, UserEventArgs args)
  public new void Add(TKey key,TValue value)
  {
  base.Add(key, value);
+```
+
  if(NewItemAdded != null)
+```
  NewItemAdded(this, new DictionaryEventArgs<TKey, TValue>(key, value)); 
  }
  }
@@ -345,15 +376,21 @@ IObserverableDictionary<string,string> dictionary = new ObserverableDictionary<s
 dictionary.NewItemAdded += Validate;
 dictionary.Add(key, value);
 
+```
+
  void Validate(object sender, DictionaryEventArgs<string,string> args)
+```css
 {
  Console.WriteLine($"{args.Key} {args.Value}");
 }
+
+```
 
 事件说完了！再回头看看观察者设计模式。
 
 微软已经很重视观察者模式这个设计，把IObserver、IObservable集成到runtime里面去了，也就是基类库里面。aspnetcore框架也有用到这个，比如日志模块。所以感觉有必要了解一下，放个小例子作为结束：
 
+```python
  internal class Message
  {
  public string Notify { get; set; }
@@ -401,14 +438,20 @@ internal class Teacher : IObservable<Message>
 
  public void Dispose()
  {
+```
+
  if(_observers.Contains(_observer))
+```
  _observers.Remove(_observer);
  }
  }
 
  internal abstract class Student : IObserver<Message>
  {
+```
+
  private
+```
  string name;
  public Student(string name)
  {
@@ -433,7 +476,10 @@ internal class Teacher : IObservable<Message>
 
  public virtual void Subscribe(IObservable<Message> obserable)
  {
+```
+
  if (obserable != null)
+```
  _unsubscribe = obserable.Subscribe(this);
  }
  }
@@ -461,6 +507,8 @@ teacher.SendMessage("明天放假");
 teacher.OnCompleted();
 
 //这里学生是多个，也定义可以多个老师，实现多对多关系
+
+```
 
 示例代码：
 

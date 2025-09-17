@@ -12,7 +12,10 @@
 
 电脑找个地克隆下GitHub上的源码下来
 
+```
 `git clone --recursive `[`https://github.com/dotnet/aspnetcore.git`](https://github.com/dotnet/aspnetcore.git) 
+
+```
 
 注意一定要带上 recursive,一次性把依赖给下载下来。
 
@@ -52,11 +55,17 @@ restore碰运气，如果红色错误多的话需要细看再细看，我遇到�
 
 (aspnetcore\src\Servers\IIS\AspNetCoreModuleV2文件夹下面的所有的文件夹里面都有.vcxproj的项目文件,编辑它，找到 
 
+```python
 <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" /> 
+
+```
 
 和
 
+```python
 <Import Project="..\..\build\Build.Settings" /> 
+
+```
 
 注释掉,当然名字带AspNetCoreModuleV2下面的test的测试项目可以直接删除，省时省力。)
 

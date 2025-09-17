@@ -8,7 +8,10 @@
 
 # Typora是一款轻便简洁的Markdown编辑器，支持即时渲染技术，这也是与其他Markdown编辑器最显著的区别。即时渲染使得你写Markdown就想是写Word文档一样流畅自如，不像其他编辑器的有编辑栏和显示栏。 优点:
 
+```html
 <div id="post-content" class="inner-page">
+
+```
 
 - 简洁美观
 
@@ -24,7 +27,10 @@
 
 # 模式切换
 
+```html
 <div class="pgc-img">![](./images/Typora使用教程/image_1.gif)
+
+```
 
 # 文字处理
 
@@ -76,10 +82,13 @@
 typora 的文件导入/导出功能使用 Pandoc 把 Markdown 源码转换成不同的文件格式，所以我们如果想使用文件导入/导出功能，必须先安装 Pandoc。
 ![](./images/Typora使用教程/image_16.gif)
 
+```
 来源: https://www.typora.net/527.html
 
 </div>
 </div>
+
+```
 
 ---
 

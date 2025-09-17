@@ -15,11 +15,17 @@ cmd命令开启一个控制台输入wsl.exe -d Ubuntu打开linux,然后在系统
 
 ```csharp
 export ANTHROPIC_AUTH_TOKEN=你的免费有额度的apikey,
+```
 export ANTHROPIC_BASE_URL=https://anyrouter.top, //写死
+```
+
 claudek　
 ```
 
+```
 看到上面的链接就知道了时使用的是https://anyrouter.top白嫖，注册后有120块的额度，创建apikey的时候注意一下即可，合理利用吧
+```
+
 ![](./images/claude code使用/image_1.jpg)
 
 ![](./images/claude code使用/image_2.jpg)
@@ -28,40 +34,73 @@ claudek　
 
 上面的这种使用很不稳定，apikey时不时的失效，所以下面再说另一种claude code的白嫖
 
+```sql
 下面直接在windows上安装claude code，首先你电脑要有node.js，然后运行npm install -g @anthropic-ai/claude-code 即可，然后按照要求初始化一下claude，注意登陆方式（select login method）不要付费的claude，选择api调用模式（claude account with subscription,下面就是白嫖apikey了。
+```
+
 去这里拿到配置文件
 [musistudio/claude-code-router: Use Claude Code as the foundation for coding infrastructure, allowing you to decide how to interact with the model while enjoying updates from Anthropic.
 ![](./images/claude code使用/image_4.jpg)](https://github.com/musistudio/claude-code-router)
 
 然后存入到C:\Users\你的电脑用户名\.claude-code-router中，.claude-code-router没有需要创建这个目录，然后配置文件改名config.json，我的文件内容如下，按照自己需要改
 
+```css
 {
+```
+
  "Providers": [
+```css
  {
+```
+
  "name": "modelscope",
+```
  "api_base_url": "https://api-inference.modelscope.cn/v1/chat/completions",
+```
+
  "api_key": "拿你自己的apikey",
  "models": ["Qwen/Qwen3-Coder-480B-A35B-Instruct", "Qwen/Qwen3-235B-A22B-Thinking-2507"],
+```css
  "transformer": {
+```
+
  "use": [
  [
  "maxtoken",
+```css
  {
+```
+
  "max_tokens": 65536
+```css
  }
+```
+
  ],
  "enhancetool"
  ],
+```css
  "Qwen/Qwen3-235B-A22B-Thinking-2507": {
+```
+
  "use": ["reasoning"]
+```css
  }
  }
  }
+```
+
  ],
+```css
  "Router": {
+```
+
  "default": "modelscope,Qwen/Qwen3-Coder-480B-A35B-Instruct"
+```css
  }
  }
+
+```
 
 这里白嫖的是魔塔社区的apikey.,每天2000次免费，前提绑定阿里云账号
 ![](./images/claude code使用/image_5.jpg)
@@ -81,7 +120,10 @@ cmd打开一个控制台命令窗口，使用ccr code运行claude,然后可以�
 
 ![](./images/claude code使用/image_10.jpg)
 
+```
 源代码链接：[liuzhixin405/ReActAgent-NetCore](https://github.com/liuzhixin405/ReActAgent-NetCore)
+
+```
 
 ---
 

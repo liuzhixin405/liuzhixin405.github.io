@@ -18,11 +18,14 @@
 
 3、Startup类的Configure方法加入参数 ILoggerFactory loggerFactory，
 
+```csharp
 命名空间为using Microsoft.Extensions.Logging，
 
 Configure方法下面增加一行，loggerFactory.AddLog4Net();
 
 AddLog4Net方法默认会读取配置文件名为log4net.Config的文件，当然可以自定义文件名，如loggerFactory.AddLog4Net("MyTestLog4.Config");配置文件名则必须命名MyTestLog4.Config。
+
+```
 
 ![](./images/NetCore开发第一步 Log4Net日志引入/image_3.png)
 
@@ -30,6 +33,7 @@ AddLog4Net方法默认会读取配置文件名为log4net.Config的文件，当�
 
 4、配置文件内容如下：
 
+```xml
 <?xml version="1.0" encoding="utf-8"?>
 <log4net>
  <!-- Define some output appenders -->
@@ -74,6 +78,8 @@ AddLog4Net方法默认会读取配置文件名为log4net.Config的文件，当�
  <appender-ref ref="rollingAppender" />
  </root>
 </log4net>
+
+```
 
 ![](./images/NetCore开发第一步 Log4Net日志引入/image_5.png)
 

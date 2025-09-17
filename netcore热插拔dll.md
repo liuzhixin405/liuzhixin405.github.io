@@ -10,6 +10,7 @@
 
 ConsoleApp：
 
+```csharp
  1 using AppClassLibrary;
  2 using System;
  3 using System.Collections.Generic;
@@ -17,7 +18,10 @@ ConsoleApp：
  5 using System.Linq;
  6 using System.Runtime.Loader;
  7 using System.Threading;
+```
+
  8 
+```csharp
  9 namespace ConsoleApp
 10 {
 11 class Program
@@ -37,7 +41,10 @@ ConsoleApp：
 25 private static void InvokeMethod()
 26 {
 27 bool IsGo = true;
+```
+
 28 while (IsGo)
+```css
 29 {
 30 Thread.Sleep(3000);
 31 List<ICommon> common_List = new List<ICommon>();
@@ -69,8 +76,11 @@ ConsoleApp：
 57 }
 58 }
 
+```
+
 接口类库：
 
+```csharp
 using System;
 
 namespace AppClassLibrary
@@ -81,8 +91,11 @@ namespace AppClassLibrary
  }
 }
 
+```
+
 comm_Print.dll：
 
+```csharp
 using AppClassLibrary;
 using System;
 
@@ -97,8 +110,11 @@ namespace comm_Print
  }
 }
 
+```
+
 comm_Trace.dll: 
 
+```csharp
 using AppClassLibrary;
 using System;
 
@@ -112,6 +128,8 @@ namespace comm_Trace
  }
  }
 }
+
+```
 
 下面2个dll可以任意添加删除：
 

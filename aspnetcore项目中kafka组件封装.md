@@ -9,7 +9,10 @@
 前段时间在项目中把用到kafka组件完全剥离开出来，项目需要可以直接集成进去。源代码如下：
 
 [liuzhixin405/My.Project (github.com)](https://github.com/liuzhixin405/My.Project)[
+```
 ](https://github.com/liuzhixin405/NC.EntityFramework)
+
+```
 
 组件结构如下，代码太多不一一列举，可以去git上看：
 
@@ -24,9 +27,15 @@
 2、program中引入即可
 
  .UseMessageBus(
+```css
  (serviceProvider) => new List<IProducer>() { new Producer<SendOrderEvent>() }
+```
+
  ,
+```css
  (serviceProvider) => new List<IConsumer>() { new Consumer<SendOrderEvent, MessageBusTestHandler>($"{ConstDefine.Messagebus_SendOrderTopic}", "SendOrderPersistence") }
+
+```
 
  )
 

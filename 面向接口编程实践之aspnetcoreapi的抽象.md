@@ -14,6 +14,7 @@
 
 先介绍一下webapi的实现，代码是从底层往上层写的，阅读代码的习惯应该是自上向下。
 
+```csharp
  public class ProductController : CustomController<Product>
  {
  public ProductController(IEFCoreService<Product> efCoreService) : base(efCoreService)
@@ -21,8 +22,11 @@
  }
  }
 
+```
+
 控制器代码很简单的实现了CustomController，数据载体是Product。
 
+```csharp
 using BaseEntityFramework.Implementations;
 using BaseEntityFramework.Implementations.Entitys;
 using BaseEntityFramework.IService;
@@ -47,7 +51,10 @@ namespace BaseEntityFramework
  var app = builder.Build();
 
  // Configure the HTTP request pipeline.
+```
+
  if (app.Environment.IsDevelopment())
+```css
  {
  app.UseSwagger();
  app.UseSwaggerUI();
@@ -64,6 +71,8 @@ namespace BaseEntityFramework
  }
 }
 
+```
+
 Program启动程序需要实现IEFCoreService的注入，以及ProductDbContext 的内存实现。
 
 这样就可以启动一个swagger
@@ -72,14 +81,21 @@ Program启动程序需要实现IEFCoreService的注入，以及ProductDbContext 
 
 对于product数据存储的具体实现，实体类product和dbcontext必须要自己去实现它。
 
+```csharp
  public class Product:IEntity
  {
+```
+
  [Key]
+```csharp
  public int Id { get; set; }
  public string Name { get; set; }
  public string Description { get; set; }
 
+```
+
  [Column(TypeName = "decimal(28,16)")]
+```csharp
  public decimal Price { get; set; }
  }
 
@@ -98,8 +114,11 @@ namespace BaseEntityFramework.Implementations
  }
 }
 
+```
+
 查看上面的控制器代码，有注入IEFCoreService<Product>的业务代码，对于接口肯定是需要一个实现，这里可以再次封装一个抽象的基类来(温馨提示：重复的代码，必须优化)，我这里暂时没做处理。
 
+```csharp
 using BaseEntityFramework.Implementations.Entitys;
 using BaseEntityFramework.IService;
 using BaseEntityFramework.Models;
@@ -157,10 +176,13 @@ namespace BaseEntityFramework.Implementations
  }
 }
 
+```
+
 上面的代码很简单易懂，最大的好处就是可以复用。实体类和 dbcontext越多这个简简单单的结构就越是有用。
 
 BaseEntityFramework的核心逻辑就是把业务代码做了抽象，做了一个统一的模板，不管 是从那方便说都只有好处。而且作为开发只关心自己的业务代码这一块。
 
+```csharp
  public interface IEFCoreService<T> where T:IEntity
  {
  Task<bool> Add(T entity) ;
@@ -171,6 +193,8 @@ BaseEntityFramework的核心逻辑就是把业务代码做了抽象，做了一�
  Task<T> GetEntity(Expression<Func<T, bool>> expression);
  Task<IEnumerable<T>> GetAll();
  }
+
+```
 
 以上的实例只是一个简单的demo,项目中需要做框架的话这或许是一个开始，需要做的远远不止这些。
 

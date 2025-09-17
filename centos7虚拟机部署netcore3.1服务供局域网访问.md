@@ -42,11 +42,17 @@
 
 8、 安装netcore对应环境，参照文档如下：
 
+```
 https://docs.microsoft.com/zh-cn/dotnet/core/install/linux-centos，如下命令执行一遍。前提必须能连接外网，ping通baidu。
+
+```
 
 ![](./images/centos7虚拟机部署netcore3.1服务供局域网访问/image_8.png)
 
+```
  9、指定ip和端口，ip地址是centos设置地址，端口自行设置。我这里直接关闭了防火墙。有关知识参考：https://jingyan.baidu.com/article/ff42efa9fd8c1cc19e2202bb.html
+
+```
 
 ![](./images/centos7虚拟机部署netcore3.1服务供局域网访问/image_9.png)
 

@@ -21,6 +21,7 @@
 
  [Route("api/[controller]/[action]")]
  [ApiController]
+```csharp
  public class OrderController : ControllerBase
  {
  private readonly IClusterClient orderService;
@@ -29,81 +30,134 @@
  this.orderService = orderService;//500请求 并发50 . 100库存
  }
 
+```
+
  [HttpPost]
+```csharp
  public async Task Create([FromServices] Channel<CreateOrderDto> channel, string sku, int count)
  {
  await channel.Writer.WriteAsync(new CreateOrderDto(sku, count)); //高并发高效解决方案 并发测试工具postjson_windows 10s
  }
 
+```
+
  [HttpPost]
+```csharp
  public async Task CreateTestLock(string sku, int count)//非阻塞锁
  {
  await orderService.GetGrain<IOrderGrains>(Random.Shared.Next()).CreateTestLock(sku, count); //执行时间快,库存少量扣减 10s
  }
+```
+
  [HttpPost]
+```csharp
  public async Task CreateBlockingLock(string sku, int count)//阻塞锁
  {
  await orderService.GetGrain<IOrderGrains>(Random.Shared.Next()).CreateBlockingLock(sku, count); //卖不完,时间长 50s
  }
+```
+
  [HttpPost]
+```csharp
  public async Task CreateDistLock(string sku, int count) //colder组件 分布式锁
  {
  await orderService.GetGrain<IOrderGrains>(Random.Shared.Next()).CreateDistLock(sku, count); //库存扣完，时间长 50s
  }
 
+```
+
  [HttpPost]
+```csharp
  public async Task CreateNetLock(string sku, int count) //netlock.net锁 
  {
  await orderService.GetGrain<IOrderGrains>(Random.Shared.Next()).CreateNetLock(sku, count); //库存扣完，时间长 50s
  }
 
  static System.Threading.SpinLock semaphore = new SpinLock(false);
+```
+
  [HttpPost]
+```csharp
  public async Task CreateLock(string sku, int count) //卖不完
  {
  bool lockTaken = false;
+```
+
  try
+```css
  {
  semaphore.Enter(ref lockTaken);
  await orderService.GetGrain<IOrderGrains>(0).CreateLock(sku, count);
  }
+```
+
  finally
+```css
  {
+```
+
  if (lockTaken)
+```
  semaphore.Exit();
  }
  }
 
+```
+
  [HttpPost]
+```csharp
  public void CreateLocalLock(string sku, int count) //能卖完
  {
  orderService.GetGrain<IOrderGrains>(Random.Shared.Next()).CreateLocalLock(sku, count); //
  }
 
+```
+
  [HttpPost]
+```csharp
  public async Task CreateNoLock(string sku, int count)
  {
  await orderService.GetGrain<IOrderGrains>(Random.Shared.Next()).CreateNoLock(sku, count); //乱的
  }
+```
+
  [HttpGet]
+```csharp
  public async Task ChangeOrderStatus(int orderId, OrderStatus status)
  {
+```
+
  switch (status)
+```css
  {
+```
+
  case OrderStatus.Shipment:
+```
  await orderService.GetGrain<IOrderGrains>(0).Shipment(orderId);
  break;
+```
+
  case OrderStatus.Completed:
+```
  await orderService.GetGrain<IOrderGrains>(0).Completed(orderId);
  break;
+```
+
  case OrderStatus.Rejected:
+```
  await orderService.GetGrain<IOrderGrains>(0).Rejected(orderId);
  break;
+```
+
  default:
+```
  break;
  }
  }
  }
+
+```
 
 redis必不可少，有用到分布式锁。
 
@@ -129,14 +183,20 @@ redis必不可少，有用到分布式锁。
 
 多开服务
 
+```
 dotnet eapi.dll --urls="http://*:5007" --ip="127.0.0.1" --port="5007" --weight=1
 dotnet eapi.dll --urls="http://*:5008" --ip="127.0.0.1" --port="5008" --weight=2
 dotnet eapi.dll --urls="http://*:5009" --ip="127.0.0.1" --port="5009" --weight=5
 
+```
+
 consul启动走命令，应对闪退
 Consul.exe agent -dev
 
+```
 dotnet eapi.gateway.dll --urls="https://*:5000" --ip="127.0.0.1" --port="5000" 
+
+```
 
 简单说下结果吧，集群下只有分布式锁能解决问题，但是只生成了50条数据，扣减库存也是50。channel和本地锁结果都跟想的差不多，是不对的。
 
@@ -148,22 +208,35 @@ dotnet eapi.gateway.dll --urls="https://*:5000" --ip="127.0.0.1" --port="5000"
 
 ![](./images/高并发解决方案orleans实践/image_10.png)
 
+```css
 {
  "urls": "https://*:5005",
  "Logging": {
  "LogLevel": {
+```
+
  "Default": "Information",
  "Microsoft.AspNetCore": "Warning"
+```css
  }
  },
+```
+
  "AllowedHosts": "*",
+```css
  "distributedLock": {
+```
+
  "LockType": "Redis",
  "RedisEndPoints": [ "127.0.0.1:6379" ]
+```css
  },
  "OrleansOptions": {
+```
+
  "GatewayPort": 30001,
  "SiloPort": 1112
+```css
  }
 
 }
@@ -173,29 +246,44 @@ dotnet eapi.gateway.dll --urls="https://*:5000" --ip="127.0.0.1" --port="5000"
  var sport = int.Parse(builder.Configuration["OrleansOptions:SiloPort"]);
  builder.Host.UseOrleans(b => b.UseLocalhostClustering(sport, gport));
 
+```
+
 先说下遇到的问题， ReposioryBase<T>下面的代码原来返回的是iquerable<T> 这是大佬推荐的做法返回iquerable，结果到多服务就出现占用，我把事务换成现在的写法发现还是徒劳，直接查询出来ToListAsync就可以了。
 
+```csharp
  public async Task<IReadOnlyList<T>> FindByCondition(Expression<Func<T, bool>> expression)
  {
  return await DbSet.Where(expression).ToListAsync();
  }
 
+```
+
 orderService下面的代码
 
+```javascript
 var product = (await _productRepository.FindByCondition(x => x.Sku.Equals(sku))).SingleOrDefault(); //执行一尺order创建后此处链接就不释放了。
 
+```
+
  if (product == null || product.Count < count)
+```css
  {
  _logger.LogInformation("库存不足,稍后重试");
  return;
  }
+```
+
  else
+```css
  {
  product.Count -= count;
  }
 
+```
+
 下面的问题就是负载的问题，单个服务的话GetGrain<IOrderGrains>(0)没问题，多个服务这样的话所有请求都只会落到一个服务上，改成随机的三个服务就都可以了。
 
+```python
  internal class NotificationDispatcher : BackgroundService
  {
  private readonly ILogger<NotificationDispatcher> logger;
@@ -208,12 +296,21 @@ var product = (await _productRepository.FindByCondition(x => x.Sku.Equals(sku)))
  this.serviceProvider = serviceProvider;
  }
 
+```
+
  protected async override Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
+```
+
  while (!channel.Reader.Completion.IsCompleted)
+```css
  {
  var createOrderDto = await channel.Reader.ReadAsync();
+```
+
  try
+```css
  {
  using (var scope = serviceProvider.CreateScope())
  {
@@ -223,7 +320,10 @@ var product = (await _productRepository.FindByCondition(x => x.Sku.Equals(sku)))
  await orderService.Create(createOrderDto.sku, createOrderDto.count);
  }
  }
+```
+
  catch (Exception ex)
+```css
  {
  logger.LogError(ex, "notification failed");
  }
@@ -231,6 +331,8 @@ var product = (await _productRepository.FindByCondition(x => x.Sku.Equals(sku)))
  }
  }
  }
+
+```
 
 结果发现channel竟然很迅速的完成500次请求，50并发数，只用了8秒钟。数据库库存扣减完毕，order生成100条。有去了解过orleans，理解它的设计思路。但是说不上来具体的。
 
@@ -270,7 +372,10 @@ consul不知道为什么特别慢，而且和单机一样遇到有些锁完全�
 
 结论，单机用本地锁或者channel。 consul和orleans我选orleans。 consul下只能分布式锁。orleans用channel就够了。
 
+```
 源代码：[liuzhixin405/orleans-consul-cluster: orleans和consul并发测试 (github.com)](https://github.com/liuzhixin405/orleans-consul-cluster)
+
+```
 
 ---
 

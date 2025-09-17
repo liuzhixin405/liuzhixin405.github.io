@@ -24,6 +24,7 @@ SSE （服务器发送事件）是一种基于 HTTP/1.1 协议的传达模型，
 
  Starup.cs文件新增如下代码：
 
+```csharp
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -55,14 +56,23 @@ namespace WebApplication
 
  services.AddControllers();
  // 允许跨域请求
+```
+
  services.AddCors(options =>
+```css
  {
+```
+
  options.AddPolicy("AllowLocalhost",
+```
  builder => builder.WithOrigins("https://localhost:5001") // 允许来自 https://localhost:5001 的请求
  .AllowAnyHeader() // 允许任何头部
  .AllowAnyMethod()); // 允许任何方法
  });
+```
+
  services.AddSwaggerGen(c =>
+```css
  {
  c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebApplication", Version = "v1" });
  });
@@ -71,7 +81,10 @@ namespace WebApplication
  // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
  public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
  {
+```
+
  if (env.IsDevelopment())
+```css
  {
  app.UseDeveloperExceptionPage();
  app.UseSwagger();
@@ -88,7 +101,10 @@ namespace WebApplication
  // 启用静态文件中间件
  app.UseStaticFiles(); // 默认提供 wwwroot 下的静态文件
 
+```
+
  app.UseEndpoints(endpoints =>
+```css
  {
  endpoints.MapControllers();
  });
@@ -96,8 +112,11 @@ namespace WebApplication
  }
 }
 
+```
+
 控制器代码：
 
+```csharp
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Diagnostics;
@@ -109,14 +128,20 @@ using System.Runtime.InteropServices;
 
 namespace WebApplication.Controllers
 {
+```
+
  [Route("api/[controller]")]
  [ApiController]
+```csharp
  public class ServerStatusController : ControllerBase
  {
  // 定义性能计数器来获取 CPU 使用率
  private readonly PerformanceCounter _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
 
+```
+
  [HttpGet("status")]
+```csharp
  public async Task GetServerStatus()
  {
  // 设置响应头，声明是 SSE 流
@@ -129,7 +154,10 @@ namespace WebApplication.Controllers
 
  await using var writer = new StreamWriter(Response.Body, Encoding.UTF8, leaveOpen: true);
 
+```
+
  while (!HttpContext.RequestAborted.IsCancellationRequested)
+```css
  {
  // 获取 CPU 使用率
  var cpuUsage = _cpuCounter.NextValue(); // CPU 使用率百分比
@@ -147,10 +175,13 @@ namespace WebApplication.Controllers
  {
  CPU = $"{cpuUsage:F2}%",
  Memory = $"{memoryUsage} MB",
+```
+
  Uptime = uptime,
  DiskUsage = diskUsage,
  NetworkUsage = networkUsage,
  Timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+```css
  };
 
  // 将状态信息转化为 JSON 格式并发送
@@ -163,10 +194,16 @@ namespace WebApplication.Controllers
  // 获取磁盘使用情况（Windows）
  private string GetDiskUsage()
  {
+```
+
  if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+```css
  {
  var drive = DriveInfo.GetDrives().FirstOrDefault(d => d.IsReady);
+```
+
  if (drive != null)
+```css
  {
  return $"{drive.TotalFreeSpace / (1024 * 1024 * 1024)} GB free of {drive.TotalSize / (1024 * 1024 * 1024)} GB";
  }
@@ -177,8 +214,11 @@ namespace WebApplication.Controllers
  }
 }
 
+```
+
 网路获取类:
 
+```csharp
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -191,15 +231,24 @@ public class NetworkUsage
 {
  public string GetNetworkUsage()
  {
+```
+
  if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+```css
  {
  return GetWindowsNetworkUsage();
  }
+```
+
  else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+```css
  {
  return GetLinuxNetworkUsage();
  }
+```
+
  else
+```css
  {
  return "Unsupported operating system.";
  }
@@ -207,7 +256,10 @@ public class NetworkUsage
 
  private string GetWindowsNetworkUsage()
  {
+```
+
  try
+```css
  {
  // 获取 PerformanceCounter 支持的所有网络接口实例
  var category = new PerformanceCounterCategory("Network Interface");
@@ -215,11 +267,17 @@ public class NetworkUsage
 
  // 获取系统中活动的网络接口
  var interfaces = NetworkInterface.GetAllNetworkInterfaces()
+```
+
  .Where(ni => ni.OperationalStatus == OperationalStatus.Up
+```
  && validInstances.Contains(ni.Description)) // 匹配实例名称
  .ToList();
 
+```
+
  if (!interfaces.Any())
+```css
  {
  return "No valid network interfaces found.";
  }
@@ -228,7 +286,10 @@ public class NetworkUsage
 
  foreach (var iface in interfaces)
  {
+```
+
  try
+```css
  {
  var networkIn = new PerformanceCounter("Network Interface", "Bytes Received/sec", iface.Description);
  var networkOut = new PerformanceCounter("Network Interface", "Bytes Sent/sec", iface.Description);
@@ -238,7 +299,10 @@ public class NetworkUsage
 
  result.AppendLine($"{iface.Name} ({iface.Description}): {receivedBytes:F2} MB received, {sentBytes:F2} MB sent per second");
  }
+```
+
  catch (Exception ex)
+```css
  {
  result.AppendLine($"Error retrieving data for {iface.Name} ({iface.Description}): {ex.Message}");
  }
@@ -246,7 +310,10 @@ public class NetworkUsage
 
  return result.ToString();
  }
+```
+
  catch (Exception ex)
+```css
  {
  return $"Error retrieving network usage on Windows: {ex.Message}";
  }
@@ -254,24 +321,39 @@ public class NetworkUsage
 
  private string GetLinuxNetworkUsage()
  {
+```
+
  try
+```css
  {
+```
+
  if (!File.Exists("/proc/net/dev"))
+```
  return "Unable to access network statistics (Linux only)";
 
  string[] lines = File.ReadAllLines("/proc/net/dev");
 
  var networkInterfaces = lines
  .Skip(2) // 跳过前两行标题
+```
+
  .Select(line => line.Trim())
  .Where(line => line.Contains(":"))
  .Select(ParseNetworkLine)
+```
  .ToList();
 
+```
+
  return string.Join("\n", networkInterfaces.Select(ni =>
+```css
  $"{ni.Interface}: {ni.ReceivedMB:F2} MB received, {ni.TransmittedMB:F2} MB sent"));
  }
+```
+
  catch (Exception ex)
+```css
  {
  return $"Error retrieving network usage on Linux: {ex.Message}";
  }
@@ -285,18 +367,24 @@ public class NetworkUsage
  long receivedBytes = long.Parse(parts[1]); // 接收字节
  long transmittedBytes = long.Parse(parts[9]); // 发送字节
 
+```
+
  return (
  Interface: interfaceName,
+```
  ReceivedMB: receivedBytes / (1024.0 * 1024.0), // 转换为 MB
  TransmittedMB: transmittedBytes / (1024.0 * 1024.0) // 转换为 MB
  );
  }
 }
 
+```
+
 ### 2. 前端展示 SSE
 
 在浏览器中使用 JavaScript 接收服务器数据：
 
+```
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -316,7 +404,10 @@ public class NetworkUsage
  eventSource.onmessage = function (event) {
  const status = JSON.parse(event.data);
 
+```
+
  document.getElementById('status').innerHTML = `
+```html
  <p><strong>CPU Usage:</strong> ${status.CPU}</p>
  <p><strong>Memory Usage:</strong> ${status.Memory}</p>
  <p><strong>Uptime:</strong> ${status.Uptime}</p>
@@ -333,12 +424,15 @@ public class NetworkUsage
 </body>
 </html>
 
+```
+
 **运行网站后效果如下，2s刷新一次：**
 
 ![](./images/ASP.NET Core EventStream (SSE) 使用以及 WebSocket 比较/image_2.png)
 
 ### 比较 SSE 和 WebSocket
 
+```xml
 <table>
 <tbody>
 <tr><th>**特性**</th><th>**SSE**</th><th>**WebSocket**</th></tr>
@@ -374,11 +468,16 @@ public class NetworkUsage
 </tr>
 </tbody>
 </table>
+```
+
 ### 总结
 
 - 
+```xml
 <ul data-spread="false" data-pm-slice="3 1 []">
 <li>
+```
+
 **SSE** 适合于不高频、安全性优先的场景，如通知信息。它具有以下优点：
 
 - 
@@ -409,8 +508,11 @@ public class NetworkUsage
 
 此外，WebSocket 在需要多客户端实时同步状态的场景中表现优异，如协作工具（文档编辑、白板）和物联网设备管理。
 
+```xml
 </li>
 </ul>
+
+```
 
 ---
 

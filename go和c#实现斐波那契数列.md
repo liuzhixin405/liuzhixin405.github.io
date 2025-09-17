@@ -8,6 +8,7 @@
 
 首先通过C#实现斐波那契数列：
 
+```csharp
 using System.Threading.Channels;
 
 namespace App001
@@ -15,7 +16,10 @@ namespace App001
  internal class Program
  {
 
+```
+
  static async Task Main()
+```css
  {
  var count = 45;
  await SomeTask(count); //channel run time:00:00:10.0122552ms
@@ -23,7 +27,10 @@ namespace App001
  Console.Read(); //多次运行结果类似
  }
 
+```
+
  static async Task SomeTask(int count)
+```css
  {
  var startTime = DateTime.Now;
  var channel = Channel.CreateUnbounded<long>();
@@ -38,7 +45,10 @@ namespace App001
  {
  var task = Task.Factory.StartNew(async () =>
  {
+```
+
  while (await channel.Reader.WaitToReadAsync())
+```css
  {
  if (channel.Reader.TryRead(out var result))
  {
@@ -50,13 +60,19 @@ namespace App001
  tasks.Add(task);
  }
 
+```
+
  await Task.WhenAll(tasks.ToArray()).ContinueWith(t =>
+```css
  {
  Console.WriteLine($"channel run time:{ DateTime.Now.Subtract(startTime)}ms");
  });
  }
 
+```
+
  static Task OneTask(int count)
+```css
  {
  var startTime = DateTime.Now;
  for (int i = 0; i < count; i++)
@@ -67,15 +83,26 @@ namespace App001
  return Task.CompletedTask;
  }
 
+```
+
  static long Fib(long n)
+```css
  {
+```
+
  if (n <= 2)
+```
  return 1;
+```
+
  else
+```
  return Fib(n - 1) + Fib(n - 2);
  }
  }
 }
+
+```
 
 这里是一个任务cpu和内存占用情况：
 
@@ -91,39 +118,69 @@ namespace App001
 
 下面是go实现斐波那契的代码：
 
+```css
 func main() {
+```
+
  startTime := time.Now()
  jobs := make(chan int, 100)
  results := make(chan int, 100)
+```css
  for count := 0; count < 10; count++ {
+```
+
  go worker(jobs, results)
+```css
  }
 
  for i := 0; i < 45; i++ {
+```
+
  jobs <- i
+```css
  }
+
+```
 
  close(jobs)
 
+```css
  for j := 0; j < 45; j++ {
+```
+
  fmt.Println(<-results)
+```css
  }
+```
+
  endTime := time.Now()
  fmt.Println("channel run time:", endTime.Sub(startTime), "ms")
+```css
 }
 
 func worker(jobs <-chan int, results chan<- int) {
  for n := range jobs {
+```
+
  results <- fib(n)
+```css
  }
 }
 
 func fib(n int) int {
  if n <= 2 {
+```
+
  return 1
+```css
  }
+```
+
  return fib(n-1) + fib(n-2)
+```css
 }
+
+```
 
 cpu和内存占用情况：
 

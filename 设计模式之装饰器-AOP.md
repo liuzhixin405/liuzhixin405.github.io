@@ -8,6 +8,7 @@
 
 HelloWorld简单例子如下：此例子好好体会下继承 is a和组合 has a的异同。
 
+```csharp
 using System;
 using System.Runtime.InteropServices;
 
@@ -63,8 +64,11 @@ namespace TestEnviroment
  }
 }
 
+```
+
 下面是综合例子：
 
+```csharp
 using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -101,16 +105,25 @@ namespace TestEnviroment
 
  public virtual void Refresh<T>(IState newState) where T : IDecorator
  {
+```
+
  if (this.GetType() == typeof(T))
+```css
  {
  if (newState == null) state = null;
+```
+
  if (State != null && !State.Equals(newState))
+```css
  {
  State = newState;
  }
  return;
  }
+```
+
  if (target != null)
+```css
  {
  ((IDecorator)target).Refresh<T>(newState);
  }
@@ -149,11 +162,20 @@ namespace TestEnviroment
 
  public override string Content
  {
+```
+
  get
+```css
  {
+```
+
  if (((BoldState)State).IsBold)
+```css
  return $"<b>{target.Content}</b>";
+```
+
  else
+```
  return target.Content;
  }
  }
@@ -170,7 +192,10 @@ namespace TestEnviroment
  }
  public override string Content
  {
+```
+
  get
+```css
  {
  string colorName = ((ColorState)State).Color.Name;
  return $"<{colorName}>{target.Content}</{colorName}>";
@@ -214,6 +239,8 @@ namespace TestEnviroment
  }
  }
 }
+
+```
 
 ---
 

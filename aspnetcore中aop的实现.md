@@ -18,6 +18,7 @@ aaspnetcore开发框架中实现aop不仅仅在业务上，在代码的优雅简
 
 针对业务代码WarService加了一个代理的方法
 
+```csharp
 public interface IWarService
  {
  string WipeOut();
@@ -37,8 +38,11 @@ public interface IWarService
  }
  }
 
+```
+
 具体的WarDispatch就是核心代码了，继承自DispatchProxy。这里的before和after的实现就是针对实现了代码的service提前挖坑。
 
+```csharp
 public class WarDispatch<T> : DispatchProxy where T : class
  {
  private T Target { get; set; }
@@ -49,7 +53,10 @@ public class WarDispatch<T> : DispatchProxy where T : class
  return proxy as T;
  }
 
+```
+
  protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+```css
  {
  Before().Wait();
  var result = targetMethod.Invoke(Target, args);
@@ -57,21 +64,30 @@ public class WarDispatch<T> : DispatchProxy where T : class
  return result;
  }
 
+```
+
  Task Before()
+```css
  {
  return Task.CompletedTask;
  }
 
+```
+
  Task After()
+```css
  {
  return Task.CompletedTask;
  }
  }
+
+```
 
 实现代码也相当简单
 
 [ApiController]
  [Route("[controller]")]
+```csharp
  public class RescueEarthController : ControllerBase
  {
  private IWarService _warService;
@@ -81,23 +97,34 @@ public class WarDispatch<T> : DispatchProxy where T : class
  _warService = warService;
  }
 
+```
+
  [HttpGet(Name = "AnnihilateHegemony")]
+```csharp
  public string AnnihilateHegemony()
  {
  var proxy = _warService.Proxy(_warService); //代理
  return proxy.WipeOut();
  }
 
+```
+
  [HttpGet("two")]
+```csharp
  public string AnnihilateHegemonyTwo()
  {
  return _warService.WipeOut();
  }
  }
 
+```
+
 当然不要忘了注入下服务类
 
+```
 builder.Services.AddScoped<IWarService, WarService>();
+
+```
 
 上面的方式是我自己想出来的，具体到项目中需要改进的地方应该还有很多，但是足够简单，功能也比较单一。
 
@@ -109,6 +136,7 @@ builder.Services.AddScoped<IWarService, WarService>();
 
 在program中使用动态代码
 
+```
  builder.Host.UseServiceProviderFactory(new DynamicProxyServiceProviderFactory());
  builder.Services.ConfigureDynamicProxy(o =>{ 
  //添加aop的配置
@@ -116,15 +144,21 @@ builder.Services.AddScoped<IWarService, WarService>();
  
  });
 
+```
+
 内存的缓存代理
 
+```csharp
  public class CacheDeleteInterceptorAttribute:AbstractInterceptorAttribute
  {
  private readonly Type[] _types;
  private readonly string[] _methods;
  public CacheDeleteInterceptorAttribute(Type[] types, string[] methods)
  {
+```
+
  if (types.Length != methods.Length)
+```css
  {
  throw new Exception("Types必须跟Methods数量一致");
  }
@@ -152,42 +186,66 @@ builder.Services.AddScoped<IWarService, WarService>();
  {
  bool isAsync = context.IsAsync();
  var methodReturnType = context.GetReturnParameter().Type;
+```
+
  if(methodReturnType==typeof(void)|| methodReturnType==typeof(Task) || methodReturnType == typeof(ValueTask))
+```css
  {
  await next(context);
  return;
  }
  var returnType = methodReturnType;
+```
+
  if (isAsync)
+```css
  {
  returnType = returnType.GenericTypeArguments.FirstOrDefault();
  }
  //string param = GetParaName(context.Parameters); //获取方法的参数名,
  string key = $"Methods:{context.ImplementationMethod.DeclaringType.FullName}.{context.ImplementationMethod.Name}";//获取方法名称，也就是缓存key值
  var cache = context.ServiceProvider.GetService<MemoryCache>(); //可以使用自定义的redis或者其他缓存
+```
+
  if (cache.Get(key) != null)
+```css
  {
  //反射获取缓存值
  var value = typeof(MemoryCache).GetMethod("MemoryCache.Get").MakeGenericMethod(returnType).Invoke(cache, new[] {
+```
+
  key
+```
  //, param 
  });
+```
+
  if (isAsync)
+```css
  {
 
  //判断是Task还是ValueTask
+```
+
  if (methodReturnType == typeof(Task<>).MakeGenericType(returnType))
+```css
  {
  //反射获取Task<>类型的返回值，相当于Task.FromResult(value)
  context.ReturnValue = typeof(Task).GetMethod(nameof(Task.FromResult)).MakeGenericMethod(returnType).Invoke(null, new[] { value });
  }
+```
+
  else if (methodReturnType == typeof(ValueTask<>).MakeGenericType(returnType))
+```css
  {
  //反射构建ValueTask<>类型的返回值，相当于new ValueTask(value)
  context.ReturnValue = Activator.CreateInstance(typeof(ValueTask<>).MakeGenericType(returnType), value);
  }
  }
+```
+
  else
+```css
  {
  context.ReturnValue = value;
  }
@@ -195,21 +253,33 @@ builder.Services.AddScoped<IWarService, WarService>();
  }
  await next(context);
  object returnValue;
+```
+
  if (isAsync)
+```css
  {
  returnValue = await context.UnwrapAsyncReturnValue();
  //反射获取异步结果的值，相当于(context.ReturnValue as Task<>).Result
  //returnValue = typeof(Task<>).MakeGenericType(returnType).GetProperty(nameof(Task<object>.Result)).GetValue(context.ReturnValue);
 
  }
+```
+
  else
+```css
  {
  returnValue = context.ReturnValue;
  }
+```
+
  cache.Set(key
+```
  //, param
  , returnValue);
+```
+
  if(ExpireSeconds > 0)
+```css
  {
  cache.Set(key, TimeSpan.FromSeconds(ExpireSeconds));//设置key的过期时间
  }
@@ -226,8 +296,11 @@ builder.Services.AddScoped<IWarService, WarService>();
  public int ExpireSeconds { get; set; }
  }
 
+```
+
 dbcontext的代理
 
+```csharp
 public class TransactionInterceptorAttribute : AbstractInterceptorAttribute
  {
  //public override async Task Invoke(AspectContext context, AspectDelegate next)
@@ -259,21 +332,33 @@ public class TransactionInterceptorAttribute : AbstractInterceptorAttribute
  var transactionManager = dbcontext.Database.GetService<IDbContextTransactionManager>();
  var transaction = await transactionManager.BeginTransactionAsync();
 
+```
+
  if (transaction != null)
+```css
  {
  await dbcontext.Database.BeginTransactionAsync();
+```
+
  try
+```css
  {
  await next(context);
  await transaction.CommitAsync();
  }
+```
+
  catch (Exception ex)
+```css
  {
  await transaction.RollbackAsync();
  throw ex;
  }
  }
+```
+
  else
+```css
  {
  await next(context);
  }
@@ -296,16 +381,24 @@ public class TransactionInterceptorAttribute : AbstractInterceptorAttribute
  }
  }
 
+```
+
 使用就是这么简单
 
+```csharp
  public class TestOperatorDbBusiness
  {
+```
+
  [TransactionInterceptor]
+```csharp
  public async ValueTask Add()
  {
  //TODO事务操作
  }
  }
+
+```
 
 上面的代理组件功能非常多，项目中需要自己去研究更多更全的用法。
 

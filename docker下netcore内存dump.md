@@ -62,7 +62,10 @@ docker cp a59ff3a2b39e:/tmp/coredump.1 coredump.1
 
 dotnet-dump analyze coredump.1
 
+```
 后面操作按照文档一步一步的看来 [调试内存泄漏教程 | Microsoft Learn](https://learn.microsoft.com/zh-cn/dotnet/core/diagnostics/debug-memory-leak)
+
+```
 
 到这里算是完成了docker内抓取转存文件和分析的操作，但是有更方便的命令，那就是dotnet-monitor
 

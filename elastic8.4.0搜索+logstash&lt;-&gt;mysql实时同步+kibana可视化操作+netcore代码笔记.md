@@ -63,10 +63,16 @@ bin/elasticsearch-reset-password -u elastic
 
 进入es容器内部给kibana_system重置一个密码，用下面的命令在内部调用也行，我设置的elastic和kibana_system的密码一样，方便使用。
 
+```
 curl -u elastic:DiVnR2F6OGYmP+Ms+n2o -X POST "http://localhost:9200/_security/user/kibana_system/_password" -H 'Content-Type: application/json' -d'
 {
+```
+
  "password": "DiVnR2F6OGYmP+Ms+n2o"
+```css
 }
+```
+
 '
 
 ![](./images/elastic8.4.0搜索+logstash<->mysql实时同步+kibana可视化操作+netcore代码笔记/image_4.png)
@@ -75,7 +81,10 @@ curl -u elastic:DiVnR2F6OGYmP+Ms+n2o -X POST "http://localhost:9200/_security/us
 
 ![](./images/elastic8.4.0搜索+logstash<->mysql实时同步+kibana可视化操作+netcore代码笔记/image_5.png)
 
+```
  然后通过开发工具就可以做es的调试了,这里注意下需要中文分词的可以去 https://github.com/infinilabs/analysis-ik/releases 下载对应版本8.4.0的中文分词器 ，改个名放到es容器内plugins中去。也可以自定义分词文件丢进去
+
+```
 
 ![](./images/elastic8.4.0搜索+logstash<->mysql实时同步+kibana可视化操作+netcore代码笔记/image_6.png)
 
@@ -95,19 +104,28 @@ curl -u elastic:DiVnR2F6OGYmP+Ms+n2o -X POST "http://localhost:9200/_security/us
 
  jdbc.conf文件内容如下:
 
+```css
 input {
  stdin {}
  jdbc {
+```
+
  type => "jdbc"
  # 数据库连接地址
+```
  jdbc_connection_string => "jdbc:mysql://192.168.200.2:3306/bbs?characterEncoding=UTF-8&autoReconnect=true"
+```
+
  # 数据库连接账号密码；
  jdbc_user => "admin"
  jdbc_password => "这是密码"
  # MySQL依赖包路径；
  jdbc_driver_library => "D:\software\logstash-8.16.1\mysql\mysql-connector-j-8.0.32.jar"
  # the name of the driver class for mysql
+```python
  jdbc_driver_class => "com.mysql.jdbc.Driver"
+```
+
  # 数据库重连尝试次数
  connection_retry_attempts => "3"
  # 判断数据库连接是否可用，默认false不开启
@@ -142,23 +160,35 @@ input {
  #
  # 同步频率(分 时 天 月 年)，默认每分钟同步一次；
  schedule => "* * * * *"
+```css
  }
 }
 
 filter {
  json {
+```
+
  source => "message"
  remove_field => ["message"]
+```css
  }
+```
+
  # convert 字段类型转换，将字段TotalMoney数据类型改为float；
+```css
  mutate {
  convert => {
+```
+
  # "TotalMoney" => "float"
+```css
  }
  }
 }
 output {
  elasticsearch {
+```
+
  # host => "127.0.0.1"
  # port => "9200"
  # 配置ES集群地址
@@ -170,12 +200,18 @@ output {
  # 索引名字，必须小写
  index => "bbs_act"
  # 数据唯一索引（建议使用数据库KeyID）
+```css
  document_id => "%{ArticleID}"
  }
  stdout {
+```
+
  codec => json_lines
+```css
  }
 }
+
+```
 
 配置文成后执行该命令，数据实时同步开始
 
@@ -191,6 +227,7 @@ bin\logstash.bat -f mysql\jdbc.conf
 
 - 4. 下面就是代码，这里的实体没给全，注意实体需要给Text的Name属性，否则会解析不到数据的：
 
+```csharp
  public class ArticleEsContext : EsBase<ArticleDto>
  {
  public ArticleEsContext(EsConfig esConfig) : base(esConfig)
@@ -207,29 +244,50 @@ bin\logstash.bat -f mysql\jdbc.conf
  var from = (parameter.PageNumber - 1) * parameter.PageSize;
 
  var searchResponse = await client.SearchAsync<ArticleDto>(s => s
+```
+
  .Index(IndexName)
  .Query(q => q
  .Bool(b => b
  .Should(
  sh => sh.Match(m => m
+```
  .Field(f => f.ArticleTitle) // 查询 ArticleTitle
+```
+
  .Query(parameter.KeyWords)
+```
  .Fuzziness(Fuzziness.Auto) // 启用模糊查询
+```
+
  ),
  sh => sh.Match(m => m
+```
  .Field(f => f.ArticleContent) // 查询 ArticleContent
+```
+
  .Query(parameter.KeyWords)
+```
  .Fuzziness(Fuzziness.Auto) // 启用模糊查询
+```
+
  )
  )
+```
  .MinimumShouldMatch(1) // 至少一个条件必须匹配
+```
+
  )
  )
+```
  .From(from) // 设置分页的起始位置
  .Size(parameter.PageSize) // 设置每页大小
  );
 
+```
+
  if (!searchResponse.IsValid)
+```css
  {
  Console.WriteLine(searchResponse.DebugInformation);
  return new List<ArticleDto>();
@@ -241,15 +299,29 @@ bin\logstash.bat -f mysql\jdbc.conf
 
  public class ArticleDto
  {
+```
+
  [Text(Name = "ArticleID")]
+```csharp
  public int ArticleId { get; set; }
+```
+
  [Text(Name = "ArticleTitle")]
+```csharp
  public string ArticleTitle { get; set; }
+```
+
  [Text(Name = "ArticleContent")]
+```csharp
  public string ArticleContent { get; set; }
+```
+
  [Date(Name = "CreatedTime")]
+```csharp
  public DateTime CreatedTime { get; set; }
  }
+
+```
 
 代码调用结果如下：
 

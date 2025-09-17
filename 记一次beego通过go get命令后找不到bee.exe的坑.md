@@ -14,7 +14,10 @@
 
 然后可怕的事情发生了，搜索整个电脑没有发现大部分教程所谓的bee.exe。
 
+```
 然后时间一分一秒的在百度上浪费了，依然没找到。知道发现这个提问的同仁。[基于最新版go1.18安装beego后发现未在磁盘任何地方找到bee命令 · Issue #4934 · beego/beego (github.com)](https://github.com/beego/beego/issues/4934)
+
+```
 
 关键的信息就是 **安装 go.17 命令好像不是 go get了,go install 试试，bee是源文件自己编译后复制到bin下，**到这里问题终于清楚了。接下来照做。。。
 

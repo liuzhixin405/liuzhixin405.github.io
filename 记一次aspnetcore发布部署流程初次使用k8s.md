@@ -24,11 +24,17 @@ FROM mcr.microsoft.com/dotnet/aspnet:5.0-buster-slim AS base
 COPY . /app
 WORKDIR /app
 EXPOSE 5000/tcp
+```
 ENV ASPNETCORE_URLS http://*:5000/
+```
+
 ENV TZ=Asia/Shanghai
 
 # Work around for broken dotnet restore
+```
 ADD http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20210119_all.deb .
+```
+
 RUN dpkg -i ca-certificates_20210119_all.deb
 
 # soft link
@@ -41,32 +47,50 @@ RUN apt-get update \
  ca-certificates \
  && update-ca-certificates \
  libgdiplus \
+```
  && rm -rf /var/lib/apt/lists/*
  
+```
+
 ENTRYPOINT ["dotnet", "autopubtest.dll"]
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+```css
  name: {deployName}
+```
+
  labels:
+```css
  app: {deployName}
+```
+
  namespace: default
 spec:
  replicas: 2
  selector:
  matchLabels:
+```css
  app: {deployName}
+```
+
  template:
  metadata:
  labels:
+```css
  app: {deployName}
+```
+
  spec:
  nodeSelector:
  group: web
  containers:
  - name: {containerName}
+```css
  image: {imageRegistry}/{imageName}:{imageTag}
+```
+
  volumeMounts:
  - name: config-volume
  mountPath: /app/appsettings.Production.json
@@ -87,13 +111,22 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
+```css
  name: {serviceName}
+```
+
  labels:
+```css
  app: {serviceName}
+```
+
  namespace: default
 spec:
  selector:
+```css
  app: {deployName}
+```
+
  ports:
  - name: {serviceName}
  port: 5000
@@ -132,7 +165,10 @@ Registering runner... succeeded runner=
 
 ```
 gitlab-runner register \
+```
  --url http://gitlab的docker的ip \
+```
+
  --registration-token gitlab runners中的token \
  --executor docker \
  --description "My Docker Runner" \
@@ -251,13 +287,19 @@ echo "========== Commit Hash: $GIT_COMMIT =========="
 cd $WORKSPACE/src/autopubtest/
  dotnet restore 
 
+```
 if [ -d $WORKSPACE/publish ]; then
+```
+
  rm -rf $WORKSPACE/publish
 fi
 
 dotnet publish -c Release -o $WORKSPACE/publish --no-restore
 
+```
 if [ $? -ne 0 ]; then
+```
+
  echo "!!!!!!!!!!编译失败!!!!!!!!!!"
  exit 1
 else
@@ -279,7 +321,10 @@ docker login -u 仓库账号 -p 仓库密码 $pushRegistry
 cd $WORKSPACE/publish
 docker build --rm -t $imageName:$imageTag -f $WORKSPACE/docker/Dockerfile .
 
+```
 if [ $? -ne 0 ]; then
+```
+
  echo "!!!!!!!!!!镜像构建失败!!!!!!!!!!"
  exit 1
 else
@@ -289,7 +334,10 @@ fi
 docker tag $imageName:$imageTag $pushRegistry/$imageName:$imageTag
 docker push $pushRegistry/$imageName:$imageTag
 
+```
 if [ $? -ne 0 ]; then
+```
+
  echo "!!!!!!!!!!镜像发布失败!!!!!!!!!!"
  exit 1
 else
@@ -308,14 +356,23 @@ deployName=$projectName
 serviceName=$projectName
 containerName=$projectName
 imageName=$projectName
+```css
 git_message=`git log --format=format:%s -1 ${GIT_COMMIT}`
+```
+
 pullRegistry=仓库地址/项目名
 
+```css
 cat $WORKSPACE/docker/k8s.yaml | sed 's|'extensions/v1beta1'|'apps/v1'|g; s|{imageRegistry}|'$pullRegistry'|g; s|{imageName}|'$imageName'|g; s|{imageTag}|'$imageTag'|g; s|{deployName}|'$deployName'|g; s|{serviceName}|'$serviceName'|g; s|{containerName}|'$containerName'|g' > $WORKSPACE/docker/k8s.value
+```
+
 sed -i '/^---/,$d' $WORKSPACE/docker/k8s.value
 
 kubectl apply -f $WORKSPACE/docker/k8s.value 
+```
 if [ $? -ne 0 ]; then
+```
+
  echo "!!!!!!!!!!更新失败，Deployment $deployName 可能不存在，尝试创建该Deployment!!!!!!!!!!"
  kubectl create -f $WORKSPACE/docker/k8s.value 
 fi

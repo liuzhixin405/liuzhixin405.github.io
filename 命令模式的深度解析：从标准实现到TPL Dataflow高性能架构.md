@@ -19,6 +19,7 @@
 
 有关数据流这块代码核心如下：
 
+```csharp
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -58,7 +59,10 @@ namespace Common.Bus.Implementations
  private long _totalProcessingTime;
 
  public DataflowCommandBus(IServiceProvider serviceProvider, ILogger<DataflowCommandBus>? logger = null, 
+```
+
  int? maxConcurrency = null)
+```css
  {
  _provider = serviceProvider;
  _logger = logger;
@@ -72,10 +76,16 @@ namespace Common.Bus.Implementations
  private void CreateDataflowNetwork()
  {
  // 创建命令处理器
+```
+
  _commandProcessor = new ActionBlock<DataflowCommandRequest>(
  async request =>
+```css
  {
+```
+
  try
+```css
  {
  await _concurrencyLimiter.WaitAsync();
  var startTime = DateTime.UtcNow;
@@ -89,26 +99,41 @@ namespace Common.Bus.Implementations
  
  request.TaskCompletionSource.SetResult(result);
  }
+```
+
  catch (Exception ex)
+```css
  {
  Interlocked.Increment(ref _failedCommands);
  _logger?.LogError(ex, "Command processing failed for {CommandType}", request.CommandType.Name);
  request.TaskCompletionSource.SetException(ex);
  }
+```
+
  finally
+```css
  {
  _concurrencyLimiter.Release();
  }
  },
+```
+
  new ExecutionDataflowBlockOptions
+```css
  {
+```
+
  MaxDegreeOfParallelism = _maxConcurrency,
  BoundedCapacity = _maxConcurrency * 2
+```css
  });
  }
 
  public async Task<TResult> SendAsync<TCommand, TResult>(TCommand command, CancellationToken ct = default) 
+```
+
  where TCommand : ICommand<TResult>
+```css
  {
  var commandType = typeof(TCommand);
  var requestId = Guid.NewGuid();
@@ -117,17 +142,26 @@ namespace Common.Bus.Implementations
  var request = new DataflowCommandRequest(requestId, commandType, typeof(TResult), command, tcs);
  
  // 发送到数据流网络
+```
+
  if (!_commandProcessor.Post(request))
+```css
  {
  throw new InvalidOperationException("Unable to queue command for processing - system may be overloaded");
  }
  
+```
+
  try
+```css
  {
  var result = await tcs.Task.WaitAsync(ct);
  return (TResult)result;
  }
+```
+
  catch (OperationCanceledException) when (ct.IsCancellationRequested)
+```css
  {
  _logger?.LogWarning("Command {CommandType} was cancelled", commandType.Name);
  throw;
@@ -148,7 +182,10 @@ namespace Common.Bus.Implementations
  }
 
  private async Task<TResult> ProcessCommandPipelineGeneric<TCommand, TResult>(DataflowCommandRequest request) 
+```
+
  where TCommand : ICommand<TResult>
+```css
  {
  // 获取处理器和行为的工厂函数
  var handlerFactory = GetCachedHandler<TCommand, TResult>(request.CommandType);
@@ -173,32 +210,53 @@ namespace Common.Bus.Implementations
  }
 
  private async Task<object> ExecuteBehavior<TCommand, TResult>(
+```
+
  ICommandPipelineBehavior<TCommand, TResult> behavior, 
  TCommand command, 
  Func<Task<TResult>> next) 
  where TCommand : ICommand<TResult>
+```css
  {
+```
+
  try
+```css
  {
  var result = await behavior.Handle(command, next, CancellationToken.None);
  return result!;
  }
+```
+
  catch (Exception ex)
+```css
  {
  throw new InvalidOperationException($"Error executing behavior {behavior.GetType().Name}: {ex.Message}", ex);
  }
  }
 
  private Func<ICommandHandler<TCommand, TResult>> GetCachedHandler<TCommand, TResult>(Type commandType) 
+```
+
  where TCommand : ICommand<TResult>
+```css
  {
+```
+
  return (Func<ICommandHandler<TCommand, TResult>>)_handlerCache.GetOrAdd(commandType, _ =>
+```css
  {
+```
+
  return new Func<ICommandHandler<TCommand, TResult>>(() =>
+```css
  {
  using var scope = _provider.CreateScope();
  var handler = scope.ServiceProvider.GetService<ICommandHandler<TCommand, TResult>>();
+```
+
  if (handler == null)
+```css
  throw new InvalidOperationException($"No handler registered for {commandType.Name}");
  return handler;
  });
@@ -206,11 +264,20 @@ namespace Common.Bus.Implementations
  }
 
  private Func<ICommandPipelineBehavior<TCommand, TResult>[]> GetCachedBehaviors<TCommand, TResult>(Type commandType) 
+```
+
  where TCommand : ICommand<TResult>
+```css
  {
+```
+
  return (Func<ICommandPipelineBehavior<TCommand, TResult>[]>)_behaviorsCache.GetOrAdd(commandType, _ =>
+```css
  {
+```
+
  return new Func<ICommandPipelineBehavior<TCommand, TResult>[]>(() =>
+```css
  {
  using var scope = _provider.CreateScope();
  var behaviors = scope.ServiceProvider.GetServices<ICommandPipelineBehavior<TCommand, TResult>>().ToArray();
@@ -220,7 +287,10 @@ namespace Common.Bus.Implementations
  }
 
  private async Task<TResult> ExecuteHandler<TCommand, TResult>(ICommandHandler<TCommand, TResult> handler, TCommand command) 
+```
+
  where TCommand : ICommand<TResult>
+```css
  {
  return await handler.HandleAsync(command, CancellationToken.None);
  }
@@ -230,7 +300,10 @@ namespace Common.Bus.Implementations
  var handlerType = handler.GetType();
  var handleMethod = handlerType.GetMethod("HandleAsync");
  
+```
+
  if (handleMethod == null)
+```css
  throw new InvalidOperationException($"Handler {handlerType.Name} does not have HandleAsync method");
 
  var task = (Task)handleMethod.Invoke(handler, new object[] { command, CancellationToken.None })!;
@@ -242,24 +315,36 @@ namespace Common.Bus.Implementations
 
  private Func<object> GetCachedHandler(Type commandType)
  {
+```
+
  return _handlerCache.GetOrAdd(commandType, _ =>
+```css
  {
  // 获取命令类型实现的ICommand<TResult>接口
  var commandInterface = commandType.GetInterfaces()
  .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICommand<>));
  
+```
+
  if (commandInterface == null)
+```css
  throw new InvalidOperationException($"Command type {commandType.Name} does not implement ICommand<TResult>");
  
  var resultType = commandInterface.GetGenericArguments()[0];
  var handlerType = typeof(ICommandHandler<,>).MakeGenericType(commandType, resultType);
  
  // 返回一个工厂函数，而不是直接返回处理器实例
+```
+
  return new Func<object>(() =>
+```css
  {
  using var scope = _provider.CreateScope();
  var handler = scope.ServiceProvider.GetService(handlerType);
+```
+
  if (handler == null)
+```css
  throw new InvalidOperationException($"No handler registered for {commandType.Name}");
  return handler;
  });
@@ -268,20 +353,29 @@ namespace Common.Bus.Implementations
 
  private Func<object[]> GetCachedBehaviors(Type commandType)
  {
+```
+
  return _behaviorsCache.GetOrAdd(commandType, _ =>
+```css
  {
  // 获取命令类型实现的ICommand<TResult>接口
  var commandInterface = commandType.GetInterfaces()
  .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICommand<>));
  
+```
+
  if (commandInterface == null)
+```css
  throw new InvalidOperationException($"Command type {commandType.Name} does not implement ICommand<TResult>");
  
  var resultType = commandInterface.GetGenericArguments()[0];
  var behaviorType = typeof(ICommandPipelineBehavior<,>).MakeGenericType(commandType, resultType);
  
  // 返回一个工厂函数，而不是直接返回行为实例
+```
+
  return new Func<object[]>(() =>
+```css
  {
  using var scope = _provider.CreateScope();
  var behaviors = scope.ServiceProvider.GetServices(behaviorType).Where(b => b != null).ToArray();
@@ -293,8 +387,13 @@ namespace Common.Bus.Implementations
  // 监控和统计方法
  public DataflowMetrics GetMetrics()
  {
+```
+
  return new DataflowMetrics
+```css
  {
+```
+
  ProcessedCommands = Interlocked.Read(ref _processedCommands),
  FailedCommands = Interlocked.Read(ref _failedCommands),
  TotalProcessingTime = TimeSpan.FromTicks(Interlocked.Read(ref _totalProcessingTime)),
@@ -304,6 +403,7 @@ namespace Common.Bus.Implementations
  AvailableConcurrency = _concurrencyLimiter.CurrentCount,
  MaxConcurrency = _maxConcurrency,
  InputQueueSize = _commandProcessor.InputCount
+```css
  };
  }
 
@@ -341,8 +441,11 @@ namespace Common.Bus.Implementations
 
 }
 
+```
+
 这里如果不是数据流方式可以使用通用模式：
 
+```csharp
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -393,11 +496,17 @@ namespace Common.Bus.Implementations
  {
  var handlerFactory = (Func<object>)_handlerCache.GetOrAdd(commandType, _ =>
  {
+```
+
  return new Func<object>(() =>
+```css
  {
  using var scope = _provider.CreateScope();
  var handler = scope.ServiceProvider.GetService(typeof(ICommandHandler<TCommand, TResult>));
+```
+
  if (handler == null)
+```css
  throw new InvalidOperationException($"No handler registered for {commandType.Name}");
  return handler;
  });
@@ -409,7 +518,10 @@ namespace Common.Bus.Implementations
  {
  var behaviorsFactory = (Func<object[]>)_behaviorsCache.GetOrAdd(commandType, _ =>
  {
+```
+
  return new Func<object[]>(() =>
+```css
  {
  using var scope = _provider.CreateScope();
  var behaviors = scope.ServiceProvider.GetServices<ICommandPipelineBehavior<TCommand, TResult>>().ToArray();
@@ -421,21 +533,33 @@ namespace Common.Bus.Implementations
 
  private Func<object, object, CancellationToken, Task<object>> GetCachedPipeline<TCommand, TResult>(Type commandType) where TCommand : ICommand<TResult>
  {
+```
+
  return _pipelineCache.GetOrAdd(commandType, _ =>
+```css
  {
  var behaviors = GetCachedBehaviors<TCommand, TResult>(commandType);
  
  // 预构建Pipeline，避免每次调用时重新构建
+```
+
  return async (handler, command, ct) =>
+```css
  {
+```
+
  if (handler == null || command == null)
+```
  throw new ArgumentNullException("Handler or command cannot be null");
  
  var typedHandler = (ICommandHandler<TCommand, TResult>)handler;
  var typedCommand = (TCommand)command;
 
  // 如果没有behaviors，直接调用handler
+```
+
  if (behaviors.Length == 0)
+```css
  {
  var result = await typedHandler.HandleAsync(typedCommand, ct);
  return (object)result!;
@@ -449,13 +573,19 @@ namespace Common.Bus.Implementations
  }
 
  private async Task<TResult> ExecutePipeline<TCommand, TResult>(
+```
+
  ICommandHandler<TCommand, TResult> handler, 
  TCommand command, 
  ICommandPipelineBehavior<TCommand, TResult>[] behaviors, 
  int behaviorIndex, 
  CancellationToken ct) where TCommand : ICommand<TResult>
+```css
  {
+```
+
  if (behaviorIndex >= behaviors.Length)
+```css
  {
  return await handler.HandleAsync(command, ct);
  }
@@ -466,12 +596,17 @@ namespace Common.Bus.Implementations
  }
 }
 
+```
+
 其他批量操作、带监控等模式就参考其他代码：
 [exercisebook/AOP/EventBusAOP/AopNew at main · liuzhixin405/exercisebook](https://github.com/liuzhixin405/exercisebook/tree/main/AOP/EventBusAOP/AopNew)
 
 一下是项目更详细介绍，如有错误多多指正：
 
+```html
 <div># CommandBus AOP 项目
+
+```
 
 这是一个基于AOP（面向切面编程）的CommandBus项目，使用TPL Dataflow进行数据流处理优化，支持多种CommandBus实现和实时监控。
 
@@ -519,6 +654,7 @@ namespace Common.Bus.Implementations
 
 这里有一个扩展点behavior，可以注入前后时间，当前代代码只做了业务前的拦截，业务后的可以如法炮制。这样的话就是一个aop，那么跟aop切面编程又有什么区别和共同点呢？
 
+```
  // 构建处理管道
  Func<Task<TResult>> pipeline = () => ExecuteHandler<TCommand, TResult>(handler, (TCommand)request.Command);
  
@@ -535,6 +671,8 @@ namespace Common.Bus.Implementations
 
 </div>
 
+```
+
 ## 🟢 共同点
 
 - 
@@ -546,9 +684,13 @@ namespace Common.Bus.Implementations
 - 
 **可插拔**：可以动态增加/减少某个横切逻辑，而不用改业务代码。
 
+```xml
 <hr data-start="400" data-end="403">
+```
+
 ## 🔵 区别
 
+```html
 <div class="group w-fit _tableWrapper_1rjym_13 flex flex-col-reverse">
 <table class="w-fit min-w-(--thread-content-width)" data-start="414" data-end="906">
 <thead data-start="414" data-end="463">
@@ -582,8 +724,11 @@ namespace Common.Bus.Implementations
 </tbody>
 </table>
 
+```
+
 ## **性能对比总结**
 
+```html
 <div class="_tableContainer_1rjym_1">
 <div class="group w-fit _tableWrapper_1rjym_13 flex flex-col-reverse">
 <table class="w-fit min-w-(--thread-content-width)" data-start="786" data-end="990">
@@ -621,6 +766,8 @@ namespace Common.Bus.Implementations
 
 </table>
 
+```
+
  两者一句话总结：
 
 - 
@@ -629,11 +776,14 @@ namespace Common.Bus.Implementations
 - 
 **CommandBus + Behavior 更高效，但应用范围窄**（主要适合命令/查询处理管道）。
 
+```xml
 </div>
 
 </div>
 
 </div>
+
+```
 
 ---
 

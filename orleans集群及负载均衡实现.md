@@ -35,8 +35,11 @@ orleans文档体现是有集群负载，orleans的sample功能很多，但是都
 1、客户端部署多个，服务端部署多个。
 2、服务端必须轮询或者随机接收客户端请求，而不是上面情况。
 
+```
 例子在这里：[exercisebook/Orleans at main · liuzhixin405/exercisebook (github.com)](https://github.com/liuzhixin405/exercisebook/tree/main/Orleans)[
 ](https://github.com/liuzhixin405/exercise/tree/master/Orleans/Orleans.MultiClient-Test)
+
+```
 
 这个例子是一个服务，但是我给拷贝了三分，改了每份的配置。分别是host、hostcopy、hostcopycopy
 
@@ -65,6 +68,7 @@ orleans文档体现是有集群负载，orleans的sample功能很多，但是都
 
 ![](./images/orleans集群及负载均衡实现/image_6.png)
 
+```csharp
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Orleans.Grains;
@@ -73,8 +77,11 @@ using System.Threading.Tasks;
 
 namespace Orleans.WebApi.Controllers
 {
+```
+
  [Route("api/[controller]")]
  [ApiController]
+```csharp
  public class TestMultiClientController : ControllerBase
  {
  private readonly IOrleansClient _orleansClient;
@@ -83,7 +90,10 @@ namespace Orleans.WebApi.Controllers
  _orleansClient = orleansClient;
  }
 
+```
+
  [HttpGet]
+```csharp
  public async Task<string> GetOrleans1()
  {
  int sum = 0;
@@ -104,13 +114,21 @@ namespace Orleans.WebApi.Controllers
 {
  "Logging": {
  "LogLevel": {
+```
+
  "Default": "Information",
  "Microsoft": "Warning",
  "Microsoft.Hosting.Lifetime": "Information"
+```css
  }
  },
+```
+
  "AllowedHosts": "*",
+```css
  "host": {
+```
+
  "ClusterId": "A",
  "ServiceId": "AAPP",
  "Password": "123",
@@ -122,8 +140,11 @@ namespace Orleans.WebApi.Controllers
  "SiloPort": 11115,
  "IpAddress": "127.0.0.1"
 
+```css
  },
  "hostCopy": {
+```
+
  "ClusterId": "A",
  "ServiceId": "AAPP",
  "Password": "123",
@@ -134,8 +155,11 @@ namespace Orleans.WebApi.Controllers
  "GatewayPort": 30006,
  "SiloPort": 11117,
  "IpAddress": "127.0.0.1"
+```css
  },
  "hostCopyCopy": {
+```
+
  "ClusterId": "A",
  "ServiceId": "AAPP",
  "Password": "123",
@@ -146,9 +170,12 @@ namespace Orleans.WebApi.Controllers
  "GatewayPort": 30007,
  "SiloPort": 11118,
  "IpAddress": "127.0.0.1"
+```css
  } //拷贝两份host服务，分别修改配置文件中ip、siloPort、gatewayProt分别按照这个配置文件来配置。
  //重点注意，1、服务端的配置节点key都是host，保持一致。而且客户端的名字是要区分开的。2、必须先启动服务，后启动此客户端(webapi）
 }
+
+```
 
 运行结果都是这样：
 

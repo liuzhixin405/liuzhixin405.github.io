@@ -18,16 +18,25 @@ cargo new webapi创建一个webapi项目,在src下面新建handler文件夹和mo
 
 weatherforecast.rs文件新建我们需要的WeatherForecast类,附上Serialize，Deserialize接口（trait）实现。
 
+```
 use chrono::NaiveDate;
 use serde::{Serialize, Deserialize};
 
+```
+
 #[derive(Debug,Serialize,Deserialize)]
+```css
 pub struct WeatherForecast{ 
+```
+
  pub date:NaiveDate,
  pub temperature_c:i32,
  pub temperature_f:i32,
  pub summary:String
+```css
 }
+
+```
 
 mod.rs文件作为管理模块，实体类需要导入,有多少实体类都可以放进去，后续就方便从这个模块中导出需要的类。
 
@@ -45,12 +54,16 @@ mod.rs文件作为管理模块，实体类需要导入,有多少实体类都可�
 
 handlers下面的weatherforecast.rs代码如下
 
+```
 use crate::models::weatherforecast::WeatherForecast;
 use actix_web::{get,HttpResponse,Responder};
 use chrono::{Duration, Utc};
 use rand::Rng;
 
+```
+
 #[get("/getweatherforecast")]
+```css
 pub async fn getweatherforecast()->impl Responder{
  let mut rng = rand::thread_rng();
  let summaries: Vec<&str> = vec!["Sunny","Cloudy","Rainy","Stormy"];
@@ -60,34 +73,54 @@ pub async fn getweatherforecast()->impl Responder{
  let summary = summaries[rng.gen_range(0..summaries.len())].to_string();
  let temperature_f = 32 + (temperature_c / 5 * 9);
  WeatherForecast{
+```
+
  date,
  temperature_c,
  temperature_f,
  summary:summary
+```css
  }
  }).collect();
+```
+
  HttpResponse::Ok().json(weather_forecasts)
+```css
 }
+
+```
 
 handlers通过use crate::models::weatherforecast::WeatherForecast引用了models的模块，所以在main.rs中需要提前引入，代码如下：
 
 #[path = "models/mod.rs"]
+```
 mod models;
+```
+
 #[path = "handlers/mod.rs"]
+```
 mod handlers;
 
 use actix_web::{App,HttpServer};
 use handlers::*;
 
+```
+
 #[actix_web::main]
+```css
 async fn main()->std::io::Result<()> {
  HttpServer::new(||{
+```
+
  App::new()
  .service(weatherforecast::getweatherforecast)
+```css
  }).bind("127.0.0.1:8088")?.run().await
 }
 
 到这里代码就写完了，下面运行一下看看效果：访问地址 [127.0.0.1:8088/getweatherforecast](http://127.0.0.1:8088/getweatherforecast)
+
+```
 
 ![](./images/rust实现weatherforecast的获取天气webapi/image_6.png)
 

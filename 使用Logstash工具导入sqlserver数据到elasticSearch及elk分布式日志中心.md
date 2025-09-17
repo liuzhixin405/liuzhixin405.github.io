@@ -39,11 +39,17 @@ logstash使用的是7.0.0的版本，这里遇到几个问题。
 
 在config文件夹下面新建文件sqlserver_update.conf文件,拷贝下面的内容，每行基本有注释就详不说。
 
+```css
 input {
  jdbc {
+```
+
  jdbc_driver_library=>"E:\sqljdbc_6.2.2.1_enu\sqljdbc_6.2\enu/mssql-jdbc-6.2.2.jre8.jar"
+```python
  jdbc_driver_class => "com.microsoft.sqlserver.jdbc.SQLServerDriver"
  jdbc_connection_string => "jdbc:sqlserver://sqlserverIP:1433;databaseName=Reptile.NewsLetter"
+```
+
  jdbc_user => "sa"
  jdbc_password => "密码"
  #分页且最大5万次
@@ -68,16 +74,22 @@ input {
  clean_run => false 
  #是否将 column 名称转小写
  lowercase_column_names => false
+```css
  }
 }
 output {
  elasticsearch {
  hosts => ["http://my.es.com:9200"] 
+```
+
  index => "nl_livesitem"
  user => "elastic"
  password => "changeme"
+```css
  }
 }
+
+```
 
 上面的sql可以单独放到一个文件，增量更新可以通过实践、时间戳、id，我这里是id。
 
@@ -122,13 +134,17 @@ bin\logstash -f config\sqlserver_update.conf ，上面设置的执行时corn是�
 
 下面新建net7的项目，新建配置文件Nlog.config
 
+```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <nlog xmlns="http://www.nlog-project.org/schemas/NLog.xsd"
  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+```
+
  autoReload="true"
  internalLogLevel="Warn"
  internalLogFile="internal-nlog.txt">
 
+```xml
  <extensions>
  <add assembly="NLog.Web.AspNetCore"/>
  </extensions >
@@ -138,11 +154,17 @@ bin\logstash -f config\sqlserver_update.conf ，上面设置的执行时corn是�
  <!--write logs to file-->
  <!--address 填写Logstash数据的接收通道-->
  <target xsi:type="Network"
+```
+
  name="elastic"
  keepConnection="false"
+```
  address ="tcp://my.es.com:50000"
  layout="${longdate}|${logger}|${uppercase:${level}}|${message} ${exception}" />
+```
+
  />
+```xml
  <target xsi:type="Null" name="blackhole" />
  </targets>
  <rules>
@@ -153,6 +175,8 @@ bin\logstash -f config\sqlserver_update.conf ，上面设置的执行时corn是�
  <logger name="*" minlevel="Trace" writeTo="elastic" />
  </rules>
 </nlog>
+
+```
 
 这里i只需要配置logstash接受数据通道50000，加上Program一行代码，当然NLog.Extensions.Logging 、NLog.Web.AspNetCore连个nuget包是需要引用的。
 

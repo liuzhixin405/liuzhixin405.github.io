@@ -10,9 +10,12 @@
 
 今天整理一下windows下dapr的非docker部署调试，毕竟大部分开发不需要花费太多时间做部署。
 
+```
 源代码还是来自上一篇的例子,代码就不再贴出来了。 [exercisebook/Dapr/DaprDemo at main · liuzhixin405/exercisebook (github.com)](https://github.com/liuzhixin405/exercisebook/tree/main/Dapr/DaprDemo)
 
 首先windows电脑下面需要安装dapr的sdk,官方文档跳转[安装 Dapr CLI | Dapr 文档库](https://v1-5.docs.dapr.io/zh-hans/getting-started/install-dapr-cli/) 
+
+```
 
 ![](./images/windows下dapr的代码调试--非docker部署/image_1.jpg)
 

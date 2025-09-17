@@ -19,6 +19,7 @@ dapr大概的了解，个人理解他就是一个分布式服务的管理，把�
 至于代码更是简单的出奇，服务端就只需要一行注入的代码，业务代码不需要做任何改动。
 
 ```csharp
+```csharp
 namespace Server
 {
  public class Program
@@ -37,7 +38,10 @@ namespace Server
  var app = builder.Build();
 
  // Configure the HTTP request pipeline.
+```
+
  if (app.Environment.IsDevelopment())
+```css
  {
  app.UseSwagger();
  app.UseSwaggerUI();
@@ -55,17 +59,26 @@ namespace Server
 }
 
 ```
+
+```
+```csharp
 using Microsoft.AspNetCore.Mvc;
 
 namespace Server.Controllers
 {
+```
+
  [ApiController]
  [Route("[controller]")]
+```csharp
  public class WeatherForecastController : ControllerBase
  {
  private static readonly string[] Summaries = new[]
  {
+```
+
  "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+```css
  };
 
  private readonly ILogger<WeatherForecastController> _logger;
@@ -75,14 +88,23 @@ namespace Server.Controllers
  _logger = logger;
  }
 
+```
+
  [HttpGet(Name = "GetWeatherForecast")]
+```csharp
  public IEnumerable<WeatherForecast> Get()
  {
+```
+
  return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+```css
  {
+```
+
  Date = DateTime.Now.AddDays(index),
  TemperatureC = Random.Shared.Next(-20, 55),
  Summary = Summaries[Random.Shared.Next(Summaries.Length)]
+```css
  })
  .ToArray();
  }
@@ -102,8 +124,11 @@ namespace Server
  }
 }
 
+```
+
 下面就是客户端调用的代码,只需要引入包Dapr.Client包，当然consul作为服务之间调用就是httpclient调用了。
 
+```csharp
 namespace Client
 {
  public class Program
@@ -122,7 +147,10 @@ namespace Client
  var app = builder.Build();
 
  // Configure the HTTP request pipeline.
+```
+
  if (app.Environment.IsDevelopment())
+```css
  {
  app.UseSwagger();
  app.UseSwaggerUI();
@@ -144,8 +172,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Client.Controllers
 {
+```
+
  [ApiController]
  [Route("[controller]")]
+```csharp
  public class WeatherForecastController : ControllerBase
  {
  private readonly ILogger<WeatherForecastController> _logger;
@@ -155,7 +186,10 @@ namespace Client.Controllers
  _logger = logger;
  }
 
+```
+
  [HttpGet(Name = "GetWeatherForecast")]
+```csharp
  public IEnumerable<WeatherForecast> Get()
  {
  //服务之间没有用httpclient调用，用特有的dapr调用。
@@ -180,6 +214,8 @@ namespace Client
  }
 }
 
+```
+
 这个例子仅仅只说明了用Dapr微服务之间的调用，这个不是很服务，但是部署和配置等一系列操作就需要docker基础了。
 
 首先要有虚拟机，linux系统，安装好docker，本文没有用到任何yaml文件，所以没用docker-compose。
@@ -200,16 +236,22 @@ aspnetcore发布代码掠过，下面是发布后的代码，我直接拷贝到�
 
 打个比方一个dapr利弊一个docker,部署一个服务起一个docker，服务之间通信那么也就成了docker之间的通信，而且他负责自己服务的一切事情。
 
+```
 看调用代码getwf就是Server在dapr起的唯一名字--app-id, WeatherForecast就是控制器，类似于httpclient的 http://*:port/weatherforecast get调用。
+
+```
 
 dapr run --app-id clientservice --dapr-http-port 5882 --app-port 5883 dotnet Client.dll
 
 dapr run --app-id getwf --dapr-http-port 5880 --app-port 5881 dotnet Server.dll
 
+```
  //服务之间没有用httpclient调用，用特有的dapr调用。
  var daprClient = new DaprClientBuilder().Build();
  var content = daprClient.InvokeMethodAsync<IEnumerable<WeatherForecast>>(HttpMethod.Get, "getwf", "WeatherForecast").Result;
  _logger.LogInformation($"获取wf成功:{content.ToArray().ToString()}");
+
+```
 
 ![](./images/心酸部署dapr经历，最后一步莫名的遗憾/image_4.jpg)
 

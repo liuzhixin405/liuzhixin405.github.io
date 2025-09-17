@@ -8,7 +8,10 @@
 
 NCache作为缓存优点币Redis有优势，但是收费的所以选用的不多吧。下面简单实操一下：
 
+```
 首先官网下载组件[NCache Download Center (alachisoft.com)](https://www.alachisoft.com/download-ncache.html)，这里选择企业和专业版都可以，都只有一个月试用期，下一步后统一协议，后弹出第二个界面需要填写一下注册信息。重点是workemail，这里需要工作邮箱，后缀是qq，163的都不行。我用的是zoho的邮箱。
+
+```
 
 ![](./images/分布式缓存NCache使用/image_1.png)
 
@@ -27,10 +30,14 @@ NCache作为缓存优点币Redis有优势，但是收费的所以选用的不多
 下面新建netcore6 webapi程序，导入NCache的包会自动生成：client.ncconf和config.ncconf两个配置文件，重点修改client.ncconf文件的两处服务ip，还有代码
 
 ```csharp
+```html
 configuration.CacheName = "ClusteredCache"<span>; 指定CacheName名称为上图的Cache Name。</span>
+```
+
 ```
 ![](./images/分布式缓存NCache使用/image_6.png)
 
+```csharp
 using Alachisoft.NCache.Caching.Distributed;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.SqlServer;
@@ -40,7 +47,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 
+```
+
 builder.Services.AddNCacheDistributedCache(configuration =>
+```css
 {
  configuration.CacheName = "ClusteredCache";
  configuration.EnableLogs = true;
@@ -49,19 +59,28 @@ builder.Services.AddNCacheDistributedCache(configuration =>
 
 var app = builder.Build();
 
+```
+
 #region snippet_Configure
 app.Lifetime.ApplicationStarted.Register(() =>
+```css
 {
  var currentTimeUTC = DateTime.UtcNow.ToString();
  byte[] encodedCurrentTimeUTC = System.Text.Encoding.UTF8.GetBytes(currentTimeUTC);
  var options = new DistributedCacheEntryOptions()
  .SetSlidingExpiration(TimeSpan.FromSeconds(20));
+```
+
  app.Services.GetService<IDistributedCache>()
+```
  .Set("cachedTimeUTC", encodedCurrentTimeUTC, options);
 });
+```
+
 #endregion
 
 if (!app.Environment.IsDevelopment())
+```css
 {
  app.UseExceptionHandler("/Error");
  app.UseHsts();
@@ -85,7 +104,10 @@ using System.Text;
 
 namespace SampleApp.Pages
 {
+```
+
  #region snippet_IndexModel
+```csharp
  public class IndexModel : PageModel
  {
  private readonly IDistributedCache _cache;
@@ -103,13 +125,19 @@ namespace SampleApp.Pages
  CachedTimeUTC = "Cached Time Expired";
  var encodedCachedTimeUTC = await _cache.GetAsync("cachedTimeUTC");
 
+```
+
  if (encodedCachedTimeUTC != null)
+```css
  {
  CachedTimeUTC = Encoding.UTF8.GetString(encodedCachedTimeUTC);
  }
 
  ASP_Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+```
+
  if (String.IsNullOrEmpty(ASP_Environment))
+```css
  {
  ASP_Environment = "Null, so Production";
  }
@@ -126,8 +154,13 @@ namespace SampleApp.Pages
  return RedirectToPage();
  }
  }
+```
+
  #endregion
+```css
 }
+
+```
 
 运行效果图如下：
 

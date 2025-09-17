@@ -10,6 +10,7 @@
 
 开局一张图，故事慢慢编！这是一个后台任务打印时间的德莫，代码如下：
 
+```csharp
 using BackGroundTask;
 
 var builder = WebApplication.CreateBuilder();
@@ -39,7 +40,10 @@ namespace BackGroundTask
  }
  public void OnEveryFiveSecond(object? sender, TickerEventArgs args)
  {
+```
+
  if(args.Time.Second %5==0)
+```
  Console.WriteLine(args.Time.ToLongTimeString());
  }
  public void OnTick(TimeOnly time)
@@ -72,9 +76,15 @@ namespace BackGroundTask
  {
  _tickerService = tickerService;
  }
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
+```
+
  while (!stoppingToken.IsCancellationRequested)
+```css
  {
  _tickerService.OnTick(TimeOnly.FromDateTime(DateTime.Now));
  await Task.Delay(1000,stoppingToken);
@@ -83,17 +93,23 @@ namespace BackGroundTask
  }
 }
 
+```
+
 结果和预期一样，每秒打印一下时间，五秒的时候会重复一次。
 
 代码微调，把打印事件改成打印guid，新增TransientService类：
 
+```python
  internal class TransientService
  {
  public Guid Id { get; }=Guid.NewGuid();
  }
 
+```
+
 微调后代码如下：
 
+```csharp
 using BackGroundTask;
 
 var builder = WebApplication.CreateBuilder();
@@ -127,7 +143,10 @@ namespace BackGroundTask
  }
  public void OnEveryFiveSecond(object? sender, TickerEventArgs args)
  {
+```
+
  if(args.Time.Second %5==0)
+```
  Console.WriteLine(args.Time.ToLongTimeString());
  }
  public void OnTick(TimeOnly time)
@@ -145,6 +164,8 @@ namespace BackGroundTask
  }
 }
 
+```
+
 TickerBackGroundService类没有做改动，来看看结果：
 
 ![](./images/netcore后台任务注意事项/image_2.png)
@@ -154,13 +175,17 @@ TickerBackGroundService类没有做改动，来看看结果：
 问题就出在下面的代码上：
 
  　　　　　　　while (!stoppingToken.IsCancellationRequested)
+```css
  {
  _tickerService.OnTick(TimeOnly.FromDateTime(DateTime.Now));
  await Task.Delay(1000,stoppingToken);
  }
 
+```
+
 任务只要不停止，循环会一直下去，所以构造函数注入的类不会被释放，除非程序重启。那么怎么解决这个问题呢，那就是在while里面每次每次循环都创建一个新的对象。那就可以引入ServiceProvider对象。改造后的代码如下：
 
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -204,9 +229,15 @@ namespace ConsoleBackGround
  //{
  // _tickerService = tickerService;
  //}
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
+```
+
  while (!stoppingToken.IsCancellationRequested)
+```css
  {
  //_tickerService.OnTick(TimeOnly.FromDateTime(DateTime.Now)); //guid不会变
  using var scope = GlobalService.ServiceProvider.CreateScope();
@@ -218,8 +249,11 @@ namespace ConsoleBackGround
  }
 }
 
+```
+
 问题出在循环上所以TickerService代码不需要做任何更改。针对方便构造函数注入serviceprovider的情况完全不需要全局的GlobalService,通过构造函数注入的代码如下：
 
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -235,9 +269,15 @@ namespace ConsoleBackGround
  {
  _sp = sp;
  }
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
+```
+
  while (!stoppingToken.IsCancellationRequested)
+```css
  {
  ////_tickerService.OnTick(TimeOnly.FromDateTime(DateTime.Now)); //guid不会变
  using var scope = _sp.CreateScope();
@@ -249,12 +289,15 @@ namespace ConsoleBackGround
  }
 }
 
+```
+
 运行结果符合预期：
 
 ![](./images/netcore后台任务注意事项/image_3.png)
 
 下面看看使用MediatR的代码，也可以达到预期：
 
+```csharp
 using BackGroundMediatR;
 using MediatR;
 
@@ -338,7 +381,10 @@ namespace BackGroundMediatR
  {
  public Task Handle(TimedNotification notification, CancellationToken cancellationToken)
  {
+```
+
  if(notification.Time.Second % 5==0)
+```
  Console.WriteLine(notification.Time.ToLongTimeString());
  return Task.CompletedTask;
  }
@@ -361,9 +407,15 @@ namespace BackGroundMediatR
  {
  _mediator = mediator;
  }
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
+```
+
  while (!stoppingToken.IsCancellationRequested)
+```css
  {
  var timeNow = TimeOnly.FromDateTime(DateTime.Now);
  await _mediator.Publish(new TimedNotification(timeNow));
@@ -372,6 +424,8 @@ namespace BackGroundMediatR
  }
  }
 }
+
+```
 
 执行结果如下：
 

@@ -13,6 +13,7 @@ CusTRun方法要不要await，取决于要不要作为后台任务。
 任务可指定数量，线程参数可共享全，顺序可控，可继续改进。
 
 ```
+```csharp
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -25,9 +26,15 @@ namespace ConsoleApp1
  internal class Program
  {
  static AsyncLocal<int> asyncObj = new AsyncLocal<int>();
+```
+
  static async Task Main(string[] args)
+```css
  {
+```
+
  await CusTRun(100, async () =>
+```css
  {
  //TODO:业务代码
  await Task.Delay(1000);
@@ -38,19 +45,28 @@ namespace ConsoleApp1
  Console.ReadKey();
  }
 
+```
+
  static async Task CusTRun(int count, Func<Task> func, CancellationToken cancellationToken)
+```css
  {
  ConcurrentDictionary<int, Task> taskDic = new ConcurrentDictionary<int, Task>();
  for (int i = 0; i < count; i++)
  {
  asyncObj.Value = i;
+```
+
  if (taskDic.Values.Count(t => t.Status != TaskStatus.RanToCompletion) >= 5)
+```css
  {
  taskDic = (ConcurrentDictionary<int, Task>)(taskDic.OrderBy(x => x.Key));
  Task.WaitAny(taskDic.Values.ToArray());
  taskDic.Values.Where(t => t.Status != TaskStatus.RanToCompletion).ToList();
  }
+```
+
  else
+```css
  {
  taskDic.TryAdd(i, Task.Run(func, cancellationToken));
  }
@@ -59,6 +75,8 @@ namespace ConsoleApp1
  }
  }
 }
+
+```
 
 ---
 

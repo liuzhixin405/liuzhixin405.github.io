@@ -18,11 +18,17 @@
 
 用下面的命令安装Google Chrome
 
+```
 yum install https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+
+```
 
 也可以先下载至本地，然后安装
 
+```
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+
+```
 
 yum install ./google-chrome-stable_current_x86_64.rpm
 
@@ -34,11 +40,17 @@ yum install mesa-libOSMesa-devel gnu-free-sans-fonts wqy-zenhei-fonts
 
 chrome官网
 
+```
 wget https://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip
+
+```
 
 淘宝源（推荐）
 
+```
 wget http://npm.taobao.org/mirrors/chromedriver/2.41/chromedriver_linux64.zip
+
+```
 
 将下载的文件解压，放在如下位置
 
@@ -66,6 +78,7 @@ sudo dnf install dotnet-runtime-3.1 重要因为是控制台程序。
 
 **第三步**准备代码
 
+```csharp
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Remote;
 using System;
@@ -90,6 +103,8 @@ namespace TestCentOS
  }
  }
 }
+
+```
 
 目录结构，上传到centos：
 

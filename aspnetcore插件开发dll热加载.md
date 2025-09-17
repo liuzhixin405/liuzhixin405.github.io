@@ -18,6 +18,7 @@
 
 repository动态的核心思想在此项目中是反射
 
+```csharp
 public interface IRepositoryProvider
 {
  IRepository GetRepository(string serviceeName);
@@ -41,8 +42,11 @@ public class RepositoryProvider : IRepositoryProvider
  }
 }
 
+```
+
 通过一个provider注入来获取示例，这个repository的示例既然是动态热拔插，能想到暂时只能是反射来做这一块了。
 
+```csharp
 using Autofac;
 using IOrder.Repository;
 using Order.Repository;
@@ -51,7 +55,10 @@ namespace AutofacRegister
 {
  public class RepositoryModule:Module
  {
+```
+
  protected override void Load(ContainerBuilder builder)
+```css
  {
  //builder.RegisterType<Repository>().As<IRepository>().SingleInstance();
  builder.RegisterType<RepositoryProvider>().As<IRepositoryProvider>().InstancePerLifetimeScope();
@@ -59,8 +66,11 @@ namespace AutofacRegister
  }
 }
 
+```
+
 controller插件这一块大同小异，这个控制器是通过程序集注入来实现的
 
+```csharp
  public class MyControllerFilter : IStartupFilter
  {
  
@@ -71,29 +81,50 @@ controller插件这一块大同小异，这个控制器是通过程序集注入�
  this.pluginManager = pluginManager;
  controllers.ForEach(x => pluginManager.LoadPlugins($"{Directory.GetCurrentDirectory()}\\lib\\", $"{x}.Impl.dll"));
  }
+```
+
  Action<IApplicationBuilder> IStartupFilter.Configure(Action<IApplicationBuilder> next)
+```css
  {
  BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
+```
+
  return app =>
+```css
  {
 
  app.UseRouting();
+```
+
  app.UseEndpoints(endpoints =>
+```css
  {
+```
+
  foreach (IPlugin item in pluginManager.GetPlugins())
+```css
  {
+```
+
  foreach (MethodInfo mi in item.GetType().GetMethods(bindingFlags))
+```css
  {
  endpoints.MapPost($"/{item.GetType().Name.Replace("Service", "")}/{mi.Name}", async (string parameters, HttpContext cotext) =>
  {
 
  var task = (Task)mi.Invoke(item, new object[] { parameters });
+```
+
  if (task is Task apiTask)
+```css
  {
  await apiTask;
 
  // 如果任务有返回结果
+```
+
  if (apiTask is Task<object> resultTask)
+```css
  {
  var res = await resultTask;
  return Results.Ok(JsonConvert.SerializeObject(res));
@@ -111,8 +142,11 @@ controller插件这一块大同小异，这个控制器是通过程序集注入�
  }
  }
 
+```
+
 但是有一个问题,它的变化势必需要重新渲染整个controller,我只能重启他的服务了。
 
+```csharp
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Diagnostics;
@@ -157,12 +191,21 @@ namespace StartupDiagnostics
  // 文件夹内容发生变化时重新启动应用程序
  var processStartInfo = new ProcessStartInfo
  {
+```
+
  FileName = "dotnet",
+```css
  Arguments = $"exec \"{System.Reflection.Assembly.GetEntryAssembly().Location}\"",
+```
+
  UseShellExecute = false
+```css
  };
 
+```
+
  _appLifetime.ApplicationStopped.Register(() =>
+```css
  {
  Process.Start(processStartInfo);
  });
@@ -171,6 +214,8 @@ namespace StartupDiagnostics
  }
  }
 }
+
+```
 
 repository这一块页面效果没法展示，
 

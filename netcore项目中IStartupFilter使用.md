@@ -12,6 +12,7 @@ netcore项目中有些服务是在通过中间件来通信的，比如orleans组
 
 干掉host，下面代码：
 
+```csharp
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,10 +25,13 @@ namespace StartupFilterTest
  {
  static void Main(string[] args)
  {
+```
+
  #region Net 5
 
  Host.CreateDefaultBuilder(args)
  .ConfigureServices((hostContext, svc) =>
+```css
  {
  svc.AddSingleton<IStartupFilter, MyStartupFilter>();
  })
@@ -36,37 +40,52 @@ namespace StartupFilterTest
  // host.UseStartup<Startup>();
  //})
  .Build().Run(); 
+```
+
  #endregion
 
  #region Net 6
+```javascript
  //var builder = WebApplication.CreateBuilder();
  //builder.Services.AddSingleton<IStartupFilter,MyStartupFilter>();
  //var app = builder.Build();
  //app.Run(); 
 
  //WebApplicationBuilder _bootstrapHostBuilder ConfigureWebHostDefaults
+```
+
  #endregion
 
+```css
  }
  }
 }
+
+```
 
 net5里面注释掉的代码就是我们关掉的服务，跑起来相当于纯控制台了。
 
 但是startup里面需要写中间件等代码的指定，这样的话想把Startup文件干掉又不方便。通过找文档发现IStartupFilter可以实现这一块的功能，代替Configure代码块。
 
+```csharp
  public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
  {
  
  }
 
+```
+
 IStartupFilter 接口只有一个方法《Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)》只要实现它就行了,再注入到容器里面去。
 
+```python
  internal class MyStartupFilter : IStartupFilter
  {
  public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
  {
+```
+
  return app =>
+```css
  {
  app.Run(async context => { await context.Response.WriteAsync("hello world"); });
  next(app);
@@ -75,6 +94,8 @@ IStartupFilter 接口只有一个方法《Action<IApplicationBuilder> Configure(
  }
 
 svc.AddSingleton<IStartupFilter, MyStartupFilter>();
+
+```
 
 但是新的问题又来了， 发现程序跑起来完全不会执行到MyStartupFilter里面去，这是为什么呢？喵了下源码发现IStartupFilter接口的实现是放到webhost里面
 

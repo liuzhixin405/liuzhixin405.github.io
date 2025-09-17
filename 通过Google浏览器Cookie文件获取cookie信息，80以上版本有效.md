@@ -6,6 +6,7 @@
 
 ---
 
+```csharp
  public class ReadCookie
  {
  /// <summary>
@@ -30,12 +31,18 @@
  {
  conn.Close();
  cmd.CommandText = $"select * from cookies where host_key like '{domain}'";
+```
+
  #region 查看cookie表
+```
  SQLiteDataAdapter da = new SQLiteDataAdapter(cmd.CommandText, conn);
  DataSet ds = new DataSet();
  da.Fill(ds, "cookiestable");
+```
+
  #endregion
 
+```javascript
  var prm = cmd.CreateParameter();
  prm.ParameterName = "hostName";
  prm.Value = hostName;
@@ -47,10 +54,16 @@
  string encKey = File.ReadAllText(cookiePath);
  encKey = JObject.Parse(encKey)["os_crypt"]["encrypted_key"].ToString();
  var decodedKey = System.Security.Cryptography.ProtectedData.Unprotect(Convert.FromBase64String(encKey).Skip(5).ToArray(), null, System.Security.Cryptography.DataProtectionScope.LocalMachine);
+```
+
  try
+```css
  {
  var propInfo = typeof(SeleCookie).GetProperties().Where(x => x.IsDefined(typeof(CustomAttribute), false) && x.Name == reader[2].ToString() && !x.Name.Equals("Item"));
+```
+
  while (reader.Read())
+```css
  {
  byte[] encryptedData = (byte[])reader[12];
  var _cookie = _decryptWithKey(encryptedData, decodedKey, 3);
@@ -61,13 +74,19 @@
  }
 
  }
+```
+
  finally
+```css
  {
  conn.Close();
  }
 
  }
+```
+
  if (conn.State != ConnectionState.Closed)
+```css
  {
  conn.Close();
  }
@@ -81,9 +100,15 @@
  const int MAC_BIT_SIZE = 128;
  const int NONCE_BIT_SIZE = 96;
 
+```
+
  if (key == null || key.Length != KEY_BIT_SIZE / 8)
+```css
  throw new ArgumentException(String.Format("Key needs to be {0} bit!", KEY_BIT_SIZE), "key");
+```
+
  if (message == null || message.Length == 0)
+```
  throw new ArgumentException("Message required!", "message");
 
  using (var cipherStream = new MemoryStream(message))
@@ -96,12 +121,18 @@
  cipher.Init(false, parameters);
  var cipherText = cipherReader.ReadBytes(message.Length);
  var plainText = new byte[cipher.GetOutputSize(cipherText.Length)];
+```
+
  try
+```css
  {
  var len = cipher.ProcessBytes(cipherText, 0, cipherText.Length, plainText, 0);
  cipher.DoFinal(plainText, len);
  }
+```
+
  catch (InvalidCipherTextException)
+```css
  {
  return null;
  }
@@ -110,6 +141,8 @@
  }
 
  }
+
+```
 
 需要引用类库：
 

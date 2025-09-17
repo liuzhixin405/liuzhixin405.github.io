@@ -81,35 +81,53 @@ services:
 
 2.3 增加skyapm.json文件,记得属性 **复制到输出目录**里面设置 **始终复制**，防止配置文件修改不生效踩坑。这里需要注意的两个地方是1.ServiceName应该是当前程序的名字，Services是skwwalking服务器ip:11800。
 
+```css
 {
  "SkyWalking": {
+```
+
  "ServiceName": "SkyWalkingDemo",
  "Namespace": "",
  "HeaderVersions": [
  "sw6"
  ],
+```css
  "Sampling": {
+```
+
  "SamplePer3Secs": -1,
  "Percentage": -1.0
+```css
  },
  "Logging": {
+```
+
  "Level": "Debug",
+```css
  "FilePath": "logs/skyapm-{Date}.log"
  },
  "Transport": {
+```
+
  "Interval": 3000,
  "ProtocolVersion": "v6",
  "QueueSize": 30000,
  "BatchSize": 3000,
+```css
  "gRPC": {
+```
+
  "Servers": "skywalking服务器ip:11800",
  "Timeout": 10000,
  "ConnectTimeout": 10000,
  "ReportTimeout": 600000
+```css
  }
  }
  }
 }
+
+```
 
 2.4 程序launchSettings.json里面加上一行 ** "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": "SkyAPM.Agent.AspNetCore"** ，如果用的iis express启动一样需要加到iis express配置下面。如下：
 

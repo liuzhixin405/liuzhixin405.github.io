@@ -19,6 +19,7 @@
 假设我们有如下的代码，其中我们希望在每次请求时设置 `Accept-Language` 头：
 
 ```csharp
+```csharp
 using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
@@ -30,31 +31,46 @@ namespace ConsoleApp9
  {
  private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings
  {
+```
+
  ContractResolver = new CamelCasePropertyNamesContractResolver(),
  NullValueHandling = NullValueHandling.Ignore
+```css
  };
 
  private static readonly HttpClient httpClient = new HttpClient(); // 复用HttpClient实例
  private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(100); // 限制并发请求数量为100
 
+```
+
  static async Task Main(string[] args)
+```css
  {
  List<Task> tasks = new List<Task>();
  int taskNoCounter = 1; // 用于跟踪 taskno
  // 只使用一个HttpClient对象（全局共享）
  for (int i = 0; i < 50; i++)
  {
+```
+
  tasks.Add(Task.Run(async () =>
+```css
  {
  // 等待信号量，控制最大并发数
  await semaphore.WaitAsync();
 
+```
+
  try
+```css
  {
  var postData = new
  {
+```
+
  taskno = taskNoCounter++,
  content = "等待翻译的内容"
+```css
  };
  var json = JsonConvert.SerializeObject(postData, serializerSettings);
  var reqdata = new StringContent(json, Encoding.UTF8, "application/json");
@@ -72,11 +88,17 @@ namespace ConsoleApp9
  // 反序列化后，直接输出解码后的文本
  Console.WriteLine($"结果为：{response}");
  }
+```
+
  catch (Exception ex)
+```css
  {
  Console.WriteLine($"请求失败: {ex.Message}");
  }
+```
+
  finally
+```css
  {
  // 释放信号量
  semaphore.Release();
@@ -105,11 +127,16 @@ namespace ConsoleApp9
 }
 
 ```
+
+```
 接收代码如下：
 
 ```csharp
+```python
 from flask import Flask, request, jsonify
 from google.cloud import translate_v2 as translate
+
+```
 
 app = Flask(__name__)
 
@@ -117,7 +144,10 @@ app = Flask(__name__)
 translator = translate.Client()
 
 @app.route('/translate', methods=['POST'])
+```python
 def translate_text():
+```
+
  try:
  # 从请求中获取 JSON 数据
  data = request.get_json()
@@ -133,21 +163,33 @@ def translate_text():
  result = translator.translate(text, target_language=accept_language)
 
  # 构造响应数据
+```css
  response_data = {
+```
+
  "code": 200,
  "msg": "OK",
+```css
  "data": {
+```
+
  "taskno": taskno,
  "content": result['translatedText'],
  "lang": accept_language
+```css
  }
  }
+
+```
 
  # 返回 JSON 响应
  return jsonify(response_data), 200
 
  except Exception as e:
+```css
  return jsonify({"code": 500, "msg": str(e)}), 500
+
+```
 
 if __name__ == "__main__":
  app.run(debug=True, host="0.0.0.0", port=5000)
@@ -174,8 +216,12 @@ if __name__ == "__main__":
 
 以下是改进后的代码：
 
+```html
 <div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between rounded-t-md h-9 bg-token-sidebar-surface-primary dark:bg-token-main-surface-secondary select-none">
 <div class="cnblogs_Highlighter">
+```
+
+```csharp
 ```csharp
 using System.Net.Http;
 using System.Text;
@@ -188,31 +234,46 @@ namespace ConsoleApp9
  {
  private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings
  {
+```
+
  ContractResolver = new CamelCasePropertyNamesContractResolver(),
  NullValueHandling = NullValueHandling.Ignore
+```css
  };
 
  private static readonly HttpClient httpClient = new HttpClient(); // 复用HttpClient实例
  private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(100); // 限制并发请求数量为100
 
+```
+
  static async Task Main(string[] args)
+```css
  {
  List<Task> tasks = new List<Task>();
  int taskNoCounter = 1; // 用于跟踪 taskno
  // 只使用一个HttpClient对象（全局共享）
  for (int i = 0; i < 50; i++)
  {
+```
+
  tasks.Add(Task.Run(async () =>
+```css
  {
  // 等待信号量，控制最大并发数
  await semaphore.WaitAsync();
 
+```
+
  try
+```css
  {
  var postData = new
  {
+```
+
  taskno = taskNoCounter++,
  content = "等待翻译的内容"
+```css
  };
  var json = JsonConvert.SerializeObject(postData, serializerSettings);
  var reqdata = new StringContent(json, Encoding.UTF8, "application/json");
@@ -220,7 +281,10 @@ namespace ConsoleApp9
  // 使用HttpRequestMessage确保每个请求都可以单独设置头
  var requestMessage = new HttpRequestMessage(HttpMethod.Post, "http://localhost:5000/translate")
  {
+```
+
  Content = reqdata
+```css
  };
 
  // 设置请求头
@@ -237,11 +301,17 @@ namespace ConsoleApp9
  // 反序列化后，直接输出解码后的文本
  Console.WriteLine($"结果为：{response}");
  }
+```
+
  catch (Exception ex)
+```css
  {
  Console.WriteLine($"请求失败: {ex.Message}");
  }
+```
+
  finally
+```css
  {
  // 释放信号量
  semaphore.Release();
@@ -271,6 +341,8 @@ namespace ConsoleApp9
 
 ```
 
+```
+
 #### **5. 解析解决方案：为何 `HttpRequestMessage` 更加可靠**
 
 - **独立请求头**：`HttpRequestMessage` 是一个每个请求都可以独立设置头部的类，它允许我们为每个 HTTP 请求单独配置请求头，而不会被其他请求所干扰。通过这种方式，我们可以确保每个请求都使用准确的请求头。
@@ -289,13 +361,19 @@ namespace ConsoleApp9
 
 通过这种方式，我们不仅避免了请求头丢失的问题，还提升了请求的可靠性和可控性，使得整个 HTTP 请求管理更加高效和精确。
 
+```xml
 <hr>
+```
+
 ### 总结
 
 以上从 `HttpClient` 设计和并发请求的角度，详细探讨了请求头丢失的问题，并通过实例代码展示了如何通过 `HttpRequestMessage` 来优化请求头管理。通过这种方式，能够确保在高并发或多线程环境中每个请求的请求头都能够独立设置，从而避免了请求头丢失或错误的问题。
 
+```xml
 </div>
 </div>
+
+```
 
 ---
 

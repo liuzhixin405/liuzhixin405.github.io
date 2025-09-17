@@ -16,6 +16,7 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
 
 首先trading服务有一个领域内事件接收器
 
+```csharp
  public abstract class IEntity
  {
  private int id;
@@ -54,6 +55,8 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
 
  }
 
+```
+
 我把事件简化到实体类里面，也可以不需要这个IEntity,那每次都需要自己创建order的同时创建一个事件，当然事件集合需要自己定义存起来。
 
 发件箱顾名思义就是所有邮件定时定期的投递到邮箱中，定时定期的取出来往需要的地方去投递。
@@ -64,12 +67,16 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
 
 我新建一个order,同时把发布的order事件存到数据，这就是发件箱模式。好多数据库和中间件操作的最终一致性大体都是这个模式，借助数据库的分布式事务。
 
+```csharp
  public sealed class OutBoxMessageInterceptor:SaveChangesInterceptor
  {
  public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
  {
  DbContext? dbContxt = eventData.Context;
+```
+
  if (dbContxt is null)
+```css
  {
  return base.SavingChangesAsync(eventData, result, cancellationToken);
  }
@@ -78,35 +85,50 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
  List<IEvent> entities = new List<IEvent>();
  foreach (var item in x.DomainEvents)
  {
+```
+
  if(!(item is null))
+```
  entities.Add(item);
  }
  x.ClearDomainEvents();
  return entities;
  }).Select(x => new OutBoxMessage
  {
+```
+
  Id = Guid.NewGuid(),
  OccurredOnUtc = DateTime.UtcNow,
  Type = x.GetType().Name,
  Content = System.Text.Json.JsonSerializer.Serialize((CreateOrderEvent)x)
+```css
  }).ToList();
+```
+
  if(events!=null && events.Any())
+```
  dbContxt.Set<OutBoxMessage>().AddRangeAsync(events);
  return base.SavingChangesAsync(eventData, result, cancellationToken);
  }
  }
 
+```
+
 数据库拦截器注入的代码少不了，写是写进去了，下面就是怎么去往另外的服务的发布呢？
 
  builder.Services.AddDbContext<TradingDbContext>((sp,ops) =>
+```css
  {
  ops.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=Traing;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False");
  var interceptor = sp.GetService<OutBoxMessageInterceptor>();
  ops.AddInterceptors(interceptor);
  }, ServiceLifetime.Scoped);
 
+```
+
 这里就是后台任务去取数据做处理了
 
+```csharp
  public class OutBoxMessageBackgroundService : BackgroundService
  {
  private readonly IServiceProvider _serviceProvider;
@@ -116,7 +138,10 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
  _serviceProvider = serviceProvider;
  _publisher = publisher;
  }
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
  using var scope = _serviceProvider.CreateScope();
  var _orderingContext = scope.ServiceProvider.GetService<TradingDbContext>();
@@ -124,14 +149,20 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
  .Take(10).ToListAsync(stoppingToken);
  foreach (var message in messages)
  {
+```
+
  if (string.IsNullOrEmpty(message.Content))
+```
  continue;
  var retries = 3;
  var retry = Policy.Handle<Exception>()
+```
+
  .WaitAndRetry(
  retries,
  retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
  (exception, timeSpan, retry, ctx) =>
+```css
  {
  Console.WriteLine($"发布时间失败:{message}");
  });
@@ -142,10 +173,13 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
  }
  }
 
+```
+
 就是这么简单，tradinfgapi的任务就这么愉快地完成了，这里保证了数据库写数据和发布事件出去最终是同步的，即使服务出问题重启也一样能完成任务。
 
 下面就是接受事件的billapi的服务了，因为上面代码用来重试机制，而且其他情况也比面不了事件重复发送，下面就简单的处理下订阅事件的幂等性。
 
+```csharp
  public class IDomainEvent : IEvent
  {
  public Guid Id { get; set; } 
@@ -169,7 +203,10 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
  using var scope = _serviceProvider.CreateScope();
  BillingDbContext _context = scope.ServiceProvider.GetService<BillingDbContext>();
  string consumer = args.GetType().Name;
+```
+
  if (await _context.Set<OutboxMessageConsumer>().AnyAsync(o => o.Guid == args.EventObject.Id && o.Name==consumer))
+```css
  {
  return default;
  }
@@ -178,10 +215,16 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
  await _context.BillingRecords.AddAsync(new BillingRecord { CreateTime=DateTime.UtcNow, OrderEventId=createOrderEvent.EventId});
  Console.WriteLine($"处理的消息完毕");
 
+```
+
  _context.Set<OutboxMessageConsumer>().Add(new OutboxMessageConsumer
+```css
  {
+```
+
  Guid = args.EventObject.Id,
  Name = consumer
+```css
  });
  return await _context.SaveChangesAsync();
  }
@@ -202,6 +245,8 @@ aspnetcore微服务种服务之间的通信一般都有用到消息中间件，�
  public Guid EventId { get; set; }
  public int CustomerId { get; set; }
  }
+
+```
 
 同样是把事件处理后写入到数据库，每次进来去数据库看看有没有，就这么简单的完成了事件订阅的重复处理。
 

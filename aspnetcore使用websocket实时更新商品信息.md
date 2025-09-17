@@ -20,6 +20,7 @@
 
 1.产品展示页面中第一次通过接口去获取数据库的列表数据
 
+```
 /// <summary>
 /// 获取指定的商品目录
 /// </summary>
@@ -27,17 +28,26 @@
 /// <param name="pageIndex"></param>
 /// <param name="ids"></param>
 /// <returns></returns>
+```
+
 [HttpGet]
 [Route("items")]
 [ProducesResponseType(typeof(PaginatedViewModel<Catalog>), StatusCodes.Status200OK)]
 [ProducesResponseType(typeof(IEnumerable<ProductDto>), StatusCodes.Status200OK)]
 [ProducesResponseType(StatusCodes.Status400BadRequest)]
+```csharp
 public async Task<IActionResult> Catalogs([FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 0, string ids = null)
 {
+```
+
  if (!string.IsNullOrEmpty(ids))
+```css
  {
  var items = await GetItemByIds(ids);
+```
+
  if (!items.Any())
+```css
  {
  return BadRequest("ids value invalid. Must be comma-separated list of numbers");
  }
@@ -49,9 +59,12 @@ public async Task<IActionResult> Catalogs([FromQuery] int pageSize = 10, [FromQu
  .LongCountAsync();
 
  var itemsOnPage = await _catalogContext.Catalogs
+```
+
  .OrderBy(c => c.Name)
  .Skip(pageSize * pageIndex)
  .Take(pageSize)
+```
  .ToListAsync();
  var result = itemsOnPage.Select(x => new ProductDto(x.Id.ToString(), x.Name, x.Price.ToString(), x.Stock.ToString(), x.ImgPath));
  var model = new PaginatedViewModel<ProductDto>(pageIndex, pageSize, totalItems, result);
@@ -59,9 +72,12 @@ public async Task<IActionResult> Catalogs([FromQuery] int pageSize = 10, [FromQu
 
 }
 
+```
+
 2.在前端页面会把当前页面的产品列表id都发送到websocket中去
 
 ```csharp
+```javascript
  function updateAndSendProductIds(ids) {
  productIds = ids;
 
@@ -76,7 +92,10 @@ public async Task<IActionResult> Catalogs([FromQuery] int pageSize = 10, [FromQu
  
  const apiUrl = baseUrl + `/Catalog/items?pageSize=${pageSize}&pageIndex=${currentPage}`;
 
+```
+
  axios.get(apiUrl)
+```css
  .then(response => {
  const data = response.data.data;
  displayProducts(baseUrl, data);
@@ -98,8 +117,11 @@ public async Task<IActionResult> Catalogs([FromQuery] int pageSize = 10, [FromQu
  }
 
 ```
+
+```
 3.websocket拿到了id数据可以精确的把当前页面的产品都查出来再推送给product.html页面，通过下面的ReceiveAsync方法获取html发送的数据，再通过timer定时器每秒钟Send方法实时的往页面发送获取到的数据，当然这个是不断的去从redis中去查的。
 
+```csharp
 ```csharp
 using System.Net.WebSockets;
 using System.Threading.Tasks;
@@ -133,7 +155,10 @@ namespace WebScoket.Server.Services
  private void Send(object state)
  {
  // 获取当前时间并发送给所有连接的客户端
+```
+
  if (productIdsStr != null)
+```css
  {
  string[] productIds = System.Text.Json.JsonSerializer.Deserialize<string[]>(productIdsStr);
  string hashKeyToRetrieve = "products";
@@ -145,18 +170,27 @@ namespace WebScoket.Server.Services
  continue;
  }
  string retrievedProductValue = _redisDb.HashGet(hashKeyToRetrieve, productId);
+```
+
  if (!string.IsNullOrEmpty(retrievedProductValue))
+```css
  {
  //反序列化和构造函数冲突，改造了一下Catalog
  Catalog catalog = System.Text.Json.JsonSerializer.Deserialize<Catalog>(retrievedProductValue);
  products.Add(new ProductDto(catalog.Id.ToString(), catalog.Name, catalog.Price.ToString(), catalog.Stock.ToString(), catalog.ImgPath));
  }
  }
+```
+
  if (products.Count > 0)
+```css
  {
  SendMessageToAllAsync(System.Text.Json.JsonSerializer.Serialize(products)).Wait();
  }
+```
+
  else
+```css
  {
  SendMessageToAllAsync("NoProduct").Wait();
  }
@@ -170,9 +204,12 @@ namespace WebScoket.Server.Services
  }
 }
 ```
+
+```
 4.html页面就可以拿到最新数据再去绑定到页面
 
 ```csharp
+```css
 socket.addEventListener('message', (event) => {
  if (event.data == "NoProduct") {
  clearProductList();
@@ -185,18 +222,24 @@ socket.addEventListener('message', (event) => {
 
 ```
 
+```
+
 整个流程就这么简单，但是这里需要保持数据库和redis的数据实时同步，否则页面展示的就不是最新的数据就没意义了。
 
 再回到Catalog.Service服务中。
 
+```csharp
  private async Task DeleteCache()
  {
  //await _redisDb.HashDeleteAsync("products",id); //没必要了
  await _channel.Writer.WriteAsync("delete_catalog_fromredis");
  }
 
+```
+
 再做更新、新增、删除等动作的时候就调用一下DeleteCache方法，往后台服务发送一个channel,当后台收到后就做redis删除并且从初始化sqlserver到redis列表同步的操作
 
+```csharp
 using System.Reflection;
 using System.Threading.Channels;
 using Catalogs.Infrastructure.Database;
@@ -224,14 +267,23 @@ namespace Catalogs.WebApi.BackgroudServices
  _channel = channel;
  _logger = logger;
  }
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
  await Init();
 
+```
+
  while (!_channel.Reader.Completion.IsCompleted)
+```css
  {
  var msg = await _channel.Reader.ReadAsync();
+```
+
  if(msg == "delete_catalog_fromredis")
+```css
  {
  await Init();
  }
@@ -241,7 +293,10 @@ namespace Catalogs.WebApi.BackgroudServices
  private async Task Init()
  {
  using var scope = _serviceScopeFactory.CreateScope();
+```
+
  try
+```css
  {
  CatalogContext _context = scope.ServiceProvider.GetRequiredService<CatalogContext>();
  string hashKey = "products";
@@ -260,13 +315,18 @@ namespace Catalogs.WebApi.BackgroudServices
 
  _logger.LogInformation($"ProductList is over stored in Redis Hash."); 
  }
+```
+
  catch(Exception ex)
+```css
  {
  _logger.LogError($"ProductLis stored in Redis Hash error.");
  }
  }
  }
 }
+
+```
 
 这里还有优化的空间可以只针对怕products的hashset的某个id去更新、删除、新增一条数据。
 

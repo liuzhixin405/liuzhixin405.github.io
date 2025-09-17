@@ -18,16 +18,23 @@ postman演示如上，代码如下：
 
  [HttpPost]
  [AllowAnonymous]
+```csharp
  public IActionResult UploadFileByForm(IFormFile formFile)
  {
  var file = formFile;
+```
+
  if (file == null)
+```css
  return JsonContent(new { status = "error" }.ToJson());
 
  string path = $"/Upload/{Guid.NewGuid().ToString("N")}/{file.FileName}";
  string physicPath = GetAbsolutePath($"~{path}");
  string dir = Path.GetDirectoryName(physicPath);
+```
+
  if (!Directory.Exists(dir))
+```
  Directory.CreateDirectory(dir);
  using (FileStream fs = new FileStream(physicPath, FileMode.Create))
  {
@@ -37,14 +44,19 @@ postman演示如上，代码如下：
  string url = $"{_configuration["WebRootUrl"]}{path}";
  var res = new
  {
+```
+
  name = file.FileName,
  status = "done",
  thumbUrl = url,
  url = url
+```css
  };
 
  return JsonContent(res.ToJson());
  }
+
+```
 
 第二种通过binary
 
@@ -54,12 +66,16 @@ postman演示如上，代码如下：
 
 看代码就明白了,这里通过请求上下文的body来读取字节流，如果有提示不能同步读取流的话，需要指定 services.Configure<KestrelServerOptions>(x => x.AllowSynchronousIO = true)；现在都不用iis，所以不介绍了。
 
+```
  /// <summary>
  /// 上传图片 binary模式
  /// </summary>
  /// <returns></returns>
+```
+
  [HttpPost]
  [AllowAnonymous]
+```csharp
  public IActionResult UploadImage()
  {
  var request = HttpContext.Request;
@@ -69,8 +85,11 @@ postman演示如上，代码如下：
 
  }
 
+```
+
 aspnetcore7提供了如下的方式，通过指定本地文件绝对地址来读取字节流，应该算是第二种方式吧。
 
+```
 代码如下：参考：[ASP.NET Core 7.0 的新增功能 | Microsoft Learn](https://learn.microsoft.com/zh-cn/aspnet/core/release-notes/aspnetcore-7.0?view=aspnetcore-7.0) 需要引入包SixLabors.ImageSharp、SixLabors.ImageSharp.Formats.Jpeg
 
 using SixLabors.ImageSharp;
@@ -87,7 +106,10 @@ app.MapGet("/process-image/{strImage}", (string strImage, HttpContext http, Canc
  return Results.Stream(stream => ResizeImageAsync(strImage, stream, token), "image/jpeg");
 });
 
+```
+
 async Task ResizeImageAsync(string strImage, Stream stream, CancellationToken token)
+```css
 {
  var strPath = $"wwwroot/img/{strImage}";
  using var image = await Image.LoadAsync(strPath, token);
@@ -96,6 +118,8 @@ async Task ResizeImageAsync(string strImage, Stream stream, CancellationToken to
  image.Mutate(x =>x.Resize(width, height));
  await image.SaveAsync(stream, JpegFormat.Instance, cancellationToken: token);
 }
+
+```
 
 总结:上传文件或图片没有什么难度，只不过注意输出输入的格式就行了。如果需要多文件的话IFormFileCollection就行了， 这里不做介绍，可以看看微软的官方文档。
 

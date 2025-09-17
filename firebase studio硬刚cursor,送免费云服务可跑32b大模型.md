@@ -51,7 +51,10 @@
 
 下面介绍如何白嫖
 
+```
 访问https://studio.firebase.google.com/ 登录谷歌账号，该勾选的勾选，进到下面界面:
+
+```
 
 ![](./images/firebase studio硬刚cursor,送免费云服务可跑32b大模型/image_2.png)
 
@@ -93,7 +96,10 @@
 
 ```csharp
 # 下载
+```
 wget https://github.com/ollama/ollama/releases/download/v0.6.5/ollama-linux-amd64.tgz 到home下面，自己新建目录xxxx,然后解压进去。
+```
+
 # 修改文件属性
 chmod +x /home/xxxx/bin/ollama
 

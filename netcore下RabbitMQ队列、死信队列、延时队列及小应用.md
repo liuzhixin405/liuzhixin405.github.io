@@ -12,6 +12,7 @@
 
 1.新建aspnetcorewebapi空项目，NormalQueue,删除controllers文件夹已经无关的文件，这里为了偷懒不用console控制台：
 
+```csharp
 public class Program
  {
  public static void Main(string[] args)
@@ -30,7 +31,10 @@ public class Program
  var app = builder.Build();
 
  // Configure the HTTP request pipeline.
+```
+
  if (app.Environment.IsDevelopment())
+```css
  {
  app.UseSwagger();
  app.UseSwaggerUI();
@@ -76,22 +80,30 @@ public class Program
  }
  }
 
+```
+
 大概的介绍一下program文件：
 
 这里有三个mini控制器，从这里发送对应的消息到rabbitmq
 
 ```csharp
+```css
 "/normal/{message}" 普通队列，
 
 "/deadletterexchange/{message}" 死信队列
 
 "/deadletterexchange/{message}" 延时队列
 ```
+
+```
 ![](./images/netcore下RabbitMQ队列、死信队列、延时队列及小应用/image_1.png)
 
+```
  　　　　　　builder.Services.AddHostedService<ConsumerService>();
  builder.Services.AddHostedService<DeadLetterExchangeConsuerService>();
  builder.Services.AddHostedService<DelayExchangeConsumerService>();
+
+```
 
 这里就是消费的服务，注册成HostedService。
 
@@ -99,12 +111,19 @@ public class Program
 ConsumerService代码如下：
 
 ```
+```csharp
  public class ConsumerService : BackgroundService
  {
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
  Console.WriteLine("normal Rabbitmq消费端开始工作!");
+```
+
  while (!stoppingToken.IsCancellationRequested)
+```css
  {
  ConnectionFactory factory = new ConnectionFactory();
  factory.HostName = "localhost";
@@ -121,7 +140,10 @@ ConsumerService代码如下：
  //在队列上定义一个消费者
  var consumer = new EventingBasicConsumer(channel);
  channel.BasicConsume(queueName, false, consumer);
+```
+
  consumer.Received += (ch, ea) =>
+```css
  {
  byte[] bytes = ea.Body.ToArray();
  string str = Encoding.UTF8.GetString(bytes);
@@ -136,14 +158,23 @@ ConsumerService代码如下：
  }
  }
 
+```
+
 DeadLetterExchangeConsuerService代码如下：
 
+```csharp
  public class DeadLetterExchangeConsuerService : BackgroundService
  {
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
  Console.WriteLine("RabbitMQ消费端死信队列开始工作");
+```
+
  while (!stoppingToken.IsCancellationRequested)
+```css
  {
  DeadLetterExchange.Consumer();
  await Task.Delay(5000);
@@ -167,7 +198,10 @@ DeadLetterExchangeConsuerService代码如下：
  {
  
  channel.ExchangeDeclare(exchange, ExchangeType.Direct, true, false); //创建交换机
+```
+
  channel.QueueDeclare(queueName, true, false, false,new Dictionary<string, object>
+```css
  {
  { dlxExchangeKey,dlxExchange },
  {dlxQueueKey,dlxQueueName }
@@ -191,7 +225,10 @@ DeadLetterExchangeConsuerService代码如下：
  channel.QueueBind(dlxQueueName, dlxExchange, dlxQueueName); //绑定sixin队列sixin交换机
 
  channel.ExchangeDeclare(exchange, ExchangeType.Direct, true, false); //创建交换机
+```
+
  channel.QueueDeclare(queueName, true, false, false, new Dictionary<string, object>
+```css
  {
  { dlxExchangeKey,dlxExchange },
  {dlxQueueKey,dlxQueueName }
@@ -200,7 +237,10 @@ DeadLetterExchangeConsuerService代码如下：
 
  var consumer = new EventingBasicConsumer(channel);
  channel.BasicQos(0, 1, false);
+```
+
  consumer.Received += (model, ea) =>
+```css
  {
  var message = Encoding.UTF8.GetString(ea.Body.ToArray());
  Console.WriteLine($"队列{queueName}消费消息:{message},不做ack确认");
@@ -210,14 +250,23 @@ DeadLetterExchangeConsuerService代码如下：
  }
  }
 
+```
+
 DelayExchangeConsumerService代码如下：
 
+```csharp
  public class DelayExchangeConsumerService : BackgroundService
  {
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
  Console.WriteLine("RabbitMQ消费端延迟队列开始工作");
+```
+
  while (!stoppingToken.IsCancellationRequested)
+```css
  {
  
  DelayExchange.Consumer();
@@ -255,7 +304,10 @@ DelayExchangeConsumerService代码如下：
  // 创建消息交换机
  channel.ExchangeDeclare(exchange, type: ExchangeType.Direct, durable: true, autoDelete: false);
  //创建消息队列,并指定死信队列，和设置这个队列的消息过期时间为10s
+```
+
  channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false, arguments:
+```css
  new Dictionary<string, object> {
  { "x-dead-letter-exchange",dlxexChange}, //设置当前队列的DLX(死信交换机)
  { "x-dead-letter-routing-key",dlxQueueName}, //设置DLX的路由key，DLX会根据该值去找到死信消息存放的队列
@@ -268,9 +320,12 @@ DelayExchangeConsumerService代码如下：
  properties.Persistent = true;
  //properties.Expiration = "5000";发布消息,延时5s
  //发布消息
+```
+
  channel.BasicPublish(exchange: exchange,
  routingKey: queueName,
  basicProperties: properties,
+```
  body: Encoding.UTF8.GetBytes(message));
  Console.WriteLine($"{DateTime.Now},向队列:{queueName}发送消息:{message}");
  }
@@ -297,7 +352,10 @@ DelayExchangeConsumerService代码如下：
 
  var consumer = new EventingBasicConsumer(channel);
  channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: true);
+```
+
  consumer.Received += (model, ea) =>
+```css
  {
  //处理业务
  var message = Encoding.UTF8.GetString(ea.Body.ToArray());
@@ -309,6 +367,8 @@ DelayExchangeConsumerService代码如下：
  }
  }
  }
+
+```
 
 ![](./images/netcore下RabbitMQ队列、死信队列、延时队列及小应用/image_2.png)
 
@@ -326,6 +386,7 @@ DelayExchangeConsumerService代码如下：
 
 program代码如下：
 
+```csharp
 public class Program
  {
  public static void Main(string[] args)
@@ -343,7 +404,10 @@ public class Program
  var app = builder.Build();
 
  // Configure the HTTP request pipeline.
+```
+
  if (app.Environment.IsDevelopment())
+```css
  {
  app.UseSwagger();
  app.UseSwaggerUI();
@@ -362,8 +426,11 @@ public class Program
  //channel.ExchangeDeclare("exchange.dlx", ExchangeType.Direct, true);
  //channel.QueueDeclare("queue.dlx", true, false, false, null);
  channel.ExchangeDeclare("exchange.normal", ExchangeType.Fanout, true);
+```
+
  channel.QueueDeclare(queueName, true, false, false,
  new Dictionary<string, object>
+```css
  {
  { "x-message-ttl" ,10000},
  {"x-dead-letter-exchange","exchange.dlx" },
@@ -393,8 +460,11 @@ public class Program
  }
  }
 
+```
+
 下单后消费代码ConsumerService如下
 
+```csharp
 using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.Hosting;
 using RabbitMQ.Client;
@@ -418,7 +488,10 @@ namespace App
  channel = connection.CreateModel();
  var queueName = "rbTest2023010";
  channel.ExchangeDeclare("exchange.normal", ExchangeType.Fanout, true);
+```
+
  channel.QueueDeclare(queueName, true, false, false, new Dictionary<string, object>
+```css
  {
  { "x-message-ttl" ,10000},
  {"x-dead-letter-exchange","exchange.dlx" },
@@ -431,7 +504,10 @@ namespace App
  //在队列上定义一个消费者
  var consumer = new EventingBasicConsumer(channel);
  channel.BasicConsume(queueName, false, consumer);
+```
+
  consumer.Received += (ch, ea) =>
+```css
  {
  byte[] bytes = ea.Body.ToArray();
  string str = Encoding.UTF8.GetString(bytes);
@@ -450,10 +526,16 @@ namespace App
  };
 
  }
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
  Console.WriteLine("normal Rabbitmq消费端开始工作!");
+```
+
  while (!stoppingToken.IsCancellationRequested)
+```css
  {
  await Task.Delay(5000);
  }
@@ -468,10 +550,13 @@ namespace App
  }
 }
 
+```
+
 通过模拟发送的消息加入跳过两个字会拒收这条消息，这样就会跳到设置的exchange.dlx交换机队列去，如果没有跳过那么这条消息就正常处理掉，消费确认。
 
 超时不处理后我们通过新的消费服务DelayConsumerService来处理这异常的消费，比如回复库存，订单状态改为取消等等
 
+```csharp
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client;
 using System.Text;
@@ -503,7 +588,10 @@ namespace App
  //在队列上定义一个消费者
  var consumer = new EventingBasicConsumer(channel);
  channel.BasicConsume("queue.dlx", false, consumer);
+```
+
  consumer.Received += (ch, ea) =>
+```css
  {
  byte[] bytes = ea.Body.ToArray();
  string str = Encoding.UTF8.GetString(bytes);
@@ -514,10 +602,16 @@ namespace App
  }
  };
  }
+```
+
  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+```css
  {
  Console.WriteLine("delay Rabbitmq消费端开始工作!");
+```
+
  while (!stoppingToken.IsCancellationRequested)
+```css
  {
  await Task.Delay(5000);
  }
@@ -533,6 +627,8 @@ namespace App
  }
 }
 
+```
+
 上面第一个例子的循环代码也需要放到构造函数去，否则rabbitmq会不停的新增消费者。
 
 运行结果：
@@ -543,7 +639,10 @@ namespace App
 
 ![](./images/netcore下RabbitMQ队列、死信队列、延时队列及小应用/image_8.png)
 
+```
 关于rabbitmq的死信队列和延时队列的介绍什么的这里不去贴baidu了，应用demo就这么多了，代码这里[exercisebook/RabbitMQ.Test at main · liuzhixin405/exercisebook (github.com)](https://github.com/liuzhixin405/exercisebook/tree/main/RabbitMQ.Test) 。小面分享一个完整一点的例子。
+
+```
 
 [exercisebook/cat.seckill/cat.seckill at main · liuzhixin405/exercisebook (github.com)](https://github.com/liuzhixin405/exercisebook/tree/main/cat.seckill/cat.seckill)
 

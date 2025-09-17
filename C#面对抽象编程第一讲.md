@@ -10,9 +10,13 @@
 
 上例子，这应该是大家都很熟悉耳熟能详的代码， so easy。
 
+```csharp
  1 using System;
  2 using System.Diagnostics;
+```
+
  3 
+```csharp
  4 namespace ConsoleApp1
  5 {
  6 internal class Program
@@ -45,6 +49,8 @@
 33 }
 34 }
 
+```
+
 我们看看它的脆弱性在哪里？ 
 
 •随机数发生器可能变成从数据库提取的一批商品数量或从多个下游企业发来的报文中筛选出来的RFID过检（通过检查）集装箱件数。 
@@ -53,6 +59,7 @@
 
 归纳一下，这种混合方式的程序相对脆弱，因为会导致变化的因素比较多，按照我们之前设计模式的经验，这时候应该抽象对象，这里我们先把V和M抽象出来，然后在C中组合它们：
 
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -104,7 +111,10 @@ namespace ConsoleApp2
  {
  public int[] Data
  {
+```
+
  get
+```css
  {
  Random random = new Random();
  int[] result = new int[10];
@@ -143,8 +153,11 @@ namespace ConsoleApp2
  }
 }
 
+```
+
 按照上面的介绍，主动方式MVC需要一个观察者对M保持关注。这里我们简单采用.NET的事件机制来充当这个角色，而本应从V发起的重新访问M获得新数据的过程也简化为事件参数，在触发事件的同时一并提供，代码如下所示：
 
+```csharp
 using System;
 using System.Diagnostics;
 
@@ -189,7 +202,10 @@ namespace ConsoleApp3
  public int this[int index]
  {
  get => data[index];
+```
+
  set
+```css
  {
  this.data[index] = value;
  DataChanged?.Invoke(this, new ModelEventArgs(data));
@@ -242,18 +258,26 @@ namespace ConsoleApp3
  content = string.Join(",", Array.ConvertAll<int, string>(data, n => Convert.ToString(n)));
  }
  }
+```
+
  internal interface IModel
+```css
  {
  event EventHandler<ModelEventArgs> DataChanged;
  int this[int index] { get; set; }
  }
+```
+
  internal interface IView
+```css
  {
  EventHandler<ModelEventArgs> Handler { get; }
  void Print(string data);
  }
 
 }
+
+```
 
 从上面的示例不难看出，相对被动方式的MVC而言，采用.NET事件方式实现主动方式有下述优势： 
 

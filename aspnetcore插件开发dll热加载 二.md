@@ -34,6 +34,7 @@
 
 关于业务和主服务之间的关联代码就在这了
 
+```csharp
 namespace ModuleLib
 {
  //可以给个抽象类，默认实现。否则各个服务每次实现接口会多做一步删除为实现接口的动作
@@ -44,27 +45,45 @@ namespace ModuleLib
  } 
 }
 
+```
+
 看下面的项目，有没有一点模块化开发的感觉，但是这次分离的很彻底，只需要dll就行，不需要程序集引用。
 
 ![](./images/aspnetcore插件开发dll热加载 二/image_4.png)
 
+```css
 {
+```
+
  "Modules": [
+```css
  {
+```
+
  "id": "FirstWeb",
  "version": "1.0.0",
  "path": "C:\\Users\\victor.liu\\Documents\\GitHub\\AspNetCoreSimpleAop\\LastModule\\FirstWeb\\bin\\Debug\\net8.0"
+```css
  },
  {
+```
+
  "id": "SecondService",
  "version": "1.0.0",
+```
  "path": "C:\\Users\\victor.liu\\Documents\\GitHub\\AspNetCoreSimpleAop\\LastModule\\SecondService\\bin\\Debug\\net8.0" //����csproj�ļ�����ָ�����з������ɵ�ָ����һ��Ŀ¼���������
  }
+```
+
  ]
+```css
 }
+
+```
 
 以Assembly为单位做存储
 
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,8 +103,11 @@ namespace Common
  }
 }
 
+```
+
 在初次加载的时候注入Imodule，并且缓存起来，这样避免了反射的操作，之前的做法是通过反射来拿IModule
 
+```csharp
 using Common;
 using ModuleLib;
 using System.Reflection;
@@ -103,7 +125,10 @@ namespace MainHost.ServiceExtensions
  module.Assembly = Assembly.LoadFrom($"{module.Path}\\{module.Id}.dll"); //测试才这么写
 
  var moduleType = module.Assembly.GetTypes().FirstOrDefault(t => typeof(IModule).IsAssignableFrom(t));
+```
+
  if ((moduleType != null) && (moduleType != typeof(IModule)))
+```css
  {
  services.AddSingleton(typeof(IModule), moduleType);
  }
@@ -112,8 +137,11 @@ namespace MainHost.ServiceExtensions
  }
 }
 
+```
+
 再看看Program是怎么写的，等等，为什么注释掉了重要的代码呢
 
+```csharp
 using BigHost;
 using BigHost.AssemblyExtensions;
 using Common;
@@ -138,7 +166,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //最新dotnet没有这些
+```
+
 builder.Services.AddControllers().ConfigureApplicationPartManager(apm =>
+```css
 {
  var context = new CollectibleAssemblyLoadContext();
  DirectoryInfo DirInfo = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "lib"));
@@ -179,14 +210,20 @@ ServiceLocator.Instance = app.Services;
 //}
 
 // Configure the HTTP request pipeline.
+```
+
 if (app.Environment.IsDevelopment())
+```css
 {
  app.UseSwagger();
  app.UseSwaggerUI();
 }
 app.UseHttpsRedirection();
 
+```
+
 app.MapGet("/Add", ([FromServices] ApplicationPartManager _partManager, string name) =>
+```css
 {
 
  FileInfo FileInfo = new FileInfo(Path.Combine(Directory.GetCurrentDirectory(), "lib/" + name + ".dll"));
@@ -207,18 +244,30 @@ app.MapGet("/Add", ([FromServices] ApplicationPartManager _partManager, string n
  }
  return "添加{name}controller成功";
 })
+```
+
 .WithTags("Main")
+```
 .WithOpenApi();
 
+```
+
 app.MapGet("/Remove", ([FromServices] ApplicationPartManager _partManager, string name) =>
+```css
 {
  //if (ExternalContexts.Any(
  // $"{name}.dll"))
+```
+
  if (ExternalContexts.Any(
+```css
  $"{name}"))
  {
  var matcheditem = _partManager.ApplicationParts.FirstOrDefault(x => x.Name == name);
+```
+
  if (matcheditem != null)
+```css
  {
  _partManager.ApplicationParts.Remove(matcheditem);
  matcheditem = null;
@@ -229,7 +278,10 @@ app.MapGet("/Remove", ([FromServices] ApplicationPartManager _partManager, strin
  ExternalContexts.Remove(name);
  return $"成功移除{name}controller";
  }
+```
+
  else
+```css
  {
  return "$没有{name}controller";
  }
@@ -237,6 +289,8 @@ app.MapGet("/Remove", ([FromServices] ApplicationPartManager _partManager, strin
 app.UseRouting(); //最新dotnet没有这些
 app.MapControllers(); //最新dotnet没有这些
 app.Run();
+
+```
 
 这里先对上面的尝试做个总结:
 
@@ -250,6 +304,7 @@ app.Run();
 
 下面是代码：
 
+```csharp
 using IOrder.Repository;
 using System;
 using System.Collections.Generic;
@@ -280,7 +335,10 @@ namespace AutofacRegister
  // 使用缓存中的 Assembly 对象
  return CreateInstanceFromAssembly(cachedEntry.assembly,serviceName);
  }
+```
+
  else
+```css
  {
  // 加载并缓存新的 Assembly 对象
  var assembly = LoadAssemblyFromFile(path);
@@ -305,16 +363,25 @@ namespace AutofacRegister
  return _typeCache[type_key];
  }
  var type = assembly.GetTypes()
+```
+
  .Where(t => typeof(IRepository).IsAssignableFrom(t) && !t.IsInterface)
+```
  .FirstOrDefault();
 
+```
+
  if (type != null)
+```css
  {
  var instance= (IRepository)Activator.CreateInstance(type);
  _typeCache[type_key] = instance;
  return instance;
  }
+```
+
  else
+```css
  {
  throw new InvalidOperationException("No suitable type found in the assembly.");
  }
@@ -322,8 +389,11 @@ namespace AutofacRegister
  }
 }
 
+```
+
 所有的注入业务放到单独的注入文件中，
 
+```csharp
 using Autofac;
 using IOrder.Repository;
 using Order.Repository;
@@ -332,7 +402,10 @@ namespace AutofacRegister
 {
  public class RepositoryModule:Module
  {
+```
+
  protected override void Load(ContainerBuilder builder)
+```css
  {
  //builder.RegisterType<Repository>().As<IRepository>().SingleInstance();
  builder.RegisterType<RepositoryProvider>().As<IRepositoryProvider>().InstancePerLifetimeScope();
@@ -340,8 +413,11 @@ namespace AutofacRegister
  }
 }
 
+```
+
 上面的代码可以再加一层代理，类似这样
 
+```csharp
 using CustomAttribute;
 using System.Reflection;
 using ZURU_ERP.Base.Common.UnitOfWork;
@@ -368,26 +444,44 @@ namespace ZURU_ERP.Base.Reflect
  private IBusiness<T> business;
  private List<ICusAop> cusAop;
 
+```
+
  protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+```css
  {
+```
+
  #region 缓存优化 未经过测试
+```
  string methodKey = targetMethod.Name;
+```
+
  if (!_cache.ContainsKey(methodKey))
+```css
  {
  var classType = business.GetType();
  var transAttribute = classType.GetMethod(targetMethod.Name).GetCustomAttributes<CusTransAttribute>().FirstOrDefault();
  var actionAttributes = classType.GetMethod(targetMethod.Name).GetCustomAttributes<CusActionAttribute>().ToList();
+```
+
  _cache[methodKey] = new MethodInfoCache()
+```css
  {
+```
+
  Name = methodKey,
  ClassType = classType,
  TransAttribute = transAttribute,
  ActionAttributes = actionAttributes
+```css
  };
  }
  var methodInfoCache = _cache[methodKey];
  object result;
+```
+
  if (methodInfoCache.UseAop)
+```css
  {
  var actionnames = methodInfoCache.ActionAttributes.Select(x => x.Name).ToList();
  var waitInvokes = cusAop.Where(x => actionnames.Contains(x.GetType().Name)).OrderBy(x => actionnames.IndexOf(x.GetType().Name)).ToList(); //排序
@@ -403,14 +497,20 @@ namespace ZURU_ERP.Base.Reflect
  }
  return result;
  }
+```
+
  else
+```css
  {
  return methodInfoCache.UseTrans ? Trans(targetMethod, args, out result) : targetMethod.Invoke(business, args);
  } 
+```
+
  #endregion
 
  #region 没缓存原代码 经过测试
 
+```
  //bool useTran = false;
  //var classType = business.GetType();
  //var useClassTrans = classType.GetCustomAttributes<CusTransAttribute>();
@@ -448,7 +548,10 @@ namespace ZURU_ERP.Base.Reflect
  //}
 
  //return result;
+```
+
  #endregion
+```css
  }
 
  private object? Trans(MethodInfo? targetMethod, object?[]? args, out object result)
@@ -457,28 +560,43 @@ namespace ZURU_ERP.Base.Reflect
 
  Console.WriteLine($"{targetMethod.Name} transaction started.");
 
+```
+
  try
+```css
  {
+```
+
  if (_unitOfWorkManage.TranCount <= 0)
+```css
  {
  Console.WriteLine($"Begin Transaction");
  _unitOfWorkManage.BeginTran();
  }
  result = targetMethod.Invoke(business, args);
+```
+
  if (result is ApiResult apiResult && !apiResult.success)
+```css
  {
  Console.WriteLine("apiResult return false Transaction rollback.");
  _unitOfWorkManage.RollbackTran();
  return apiResult;
  }
+```
+
  if (_unitOfWorkManage.TranCount > 0)
+```
  _unitOfWorkManage.CommitTran();
  Console.WriteLine("Transaction Commit.");
  Console.WriteLine($"{targetMethod.Name} transaction succeeded.");
 
  return result;
  }
+```
+
  catch (Exception e)
+```css
  {
  _unitOfWorkManage.RollbackTran();
  Console.WriteLine("Transaction Rollback.");
@@ -502,10 +620,13 @@ namespace ZURU_ERP.Base.Reflect
  }
 }
 
+```
+
 由于这层代码没有走依赖注入，想用各种aop组件，灵活性稍微低了一点点。
 
 下面第二种直接在业务代码中new对象也不是不可，这一层的前后需要的都可以注入到容器里面去。只不过这一层就想到包装类一层不要在使用这个类的时候做过多的职责承担
 
+```csharp
 using IBusiness;
 
 namespace Business
@@ -514,7 +635,10 @@ namespace Business
  {
  public static readonly ProductBusiness Instance;
  private bool _disposed = false; 
+```
+
  static ProductBusiness()
+```css
  {
  Instance = new ProductBusiness();
  }
@@ -536,12 +660,21 @@ namespace Business
  GC.SuppressFinalize(this);
  }
 
+```
+
  protected virtual void Dispose(bool disposing)
+```css
  {
+```
+
  if (_disposed)
+```
  return;
 
+```
+
  if (disposing)
+```css
  {
  // 释放托管资源
  }
@@ -551,16 +684,22 @@ namespace Business
  }
 
  // 析构函数
+```
+
  ~ProductBusiness()
+```css
  {
  Dispose(false);
  }
  }
 }
 
+```
+
 使用的时候就直接拿实例：
 
  [HttpPost]
+```csharp
  public async Task<int> Add()
  {
  //using var scope = ServiceLocator.Instance.CreateScope();
@@ -568,6 +707,8 @@ namespace Business
  using var business = ProductBusiness.Instance;
  return await business.AddProduct("product1",12.1m);
  }
+
+```
 
 demo源代码：
 
